@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body { margin:0; background:#080914; font-family:'Inter',system-ui,sans-serif; }
+a { color:#F58D3A; text-decoration:none; } a:hover { color:#E7426B; }
+</style>
+</helmet>
+<section style="padding:64px; display:flex; flex-direction:column; gap:32px;">
+  <div style="display:flex; flex-direction:column; gap:8px;">
+    <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#6C6F94;">CoinQuest · Kids Money App · All Screens</div>
+    <div style="font-size:32px; font-weight:700; color:#F5F5F8; letter-spacing:-0.02em;">Earn. Save. Spend smart.</div>
+    <div style="font-size:14px; color:#A8ABCE;">Teens earn real cash from chores. Parents manage, approve, deposit.</div>
+  </div>
+  <div style="display:flex; gap:48px; flex-wrap:wrap; align-items:flex-start;">
+
+    <!-- 1 · KID PICKER -->
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#6C6F94;">01 · Who's earning</div>
+      <div data-screen-label="01 Kid Picker" style="width:390px; height:844px; background:#0F1020; border:1px solid #2E3150; border-radius:32px; overflow:hidden; display:flex; flex-direction:column; color:#F5F5F8;">
+        <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 28px; font-size:13px; font-weight:600;"><span>9:41</span><span style="color:#A8ABCE;">●●●</span></div>
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; padding:48px 24px 24px; gap:24px;">
+          <div style="width:72px; height:72px; border-radius:999px; background:linear-gradient(180deg,#F58D3A 0%,#E7426B 100%); display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:800; color:#1B1C2E;">¢</div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+            <div style="font-size:28px; font-weight:700; letter-spacing:-0.02em;">CoinQuest</div>
+            <div style="font-size:15px; color:#A8ABCE;">Who's earning today?</div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:12px; width:100%; margin-top:8px;">
+            <div style="display:flex; align-items:center; gap:16px; background:#1F2139; border:1px solid #2E3150; border-radius:16px; padding:16px 20px;">
+              <div style="width:48px; height:48px; border-radius:999px; background:#F58D3A; color:#1B1C2E; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:20px;">M</div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px;"><div style="font-size:17px; font-weight:600;">Maya</div><div style="font-size:13px; color:#A8ABCE;">2 tasks waiting</div></div>
+              <div style="font-size:17px; font-weight:700; color:#3CC88A;">$24.50</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:16px; background:#1F2139; border:1px solid #2E3150; border-radius:16px; padding:16px 20px;">
+              <div style="width:48px; height:48px; border-radius:999px; background:#4D9EFF; color:#1B1C2E; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:20px;">L</div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px;"><div style="font-size:17px; font-weight:600;">Leo</div><div style="font-size:13px; color:#A8ABCE;">3 tasks waiting</div></div>
+              <div style="font-size:17px; font-weight:700; color:#3CC88A;">$11.25</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:16px; background:#1F2139; border:1px solid #2E3150; border-radius:16px; padding:16px 20px;">
+              <div style="width:48px; height:48px; border-radius:999px; background:#E7426B; color:#1B1C2E; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:20px;">Z</div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px;"><div style="font-size:17px; font-weight:600;">Zoe</div><div style="font-size:13px; color:#A8ABCE;">All done ✓</div></div>
+              <div style="font-size:17px; font-weight:700; color:#3CC88A;">$38.00</div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:24px; display:flex; justify-content:center;">
+          <div style="font-size:13px; font-weight:600; color:#A8ABCE; border:1px solid #2E3150; border-radius:999px; padding:12px 24px;">Parent mode · PIN</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 · KID HOME -->
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#6C6F94;">02 · Kid home — balance + things to do</div>
+      <div data-screen-label="02 Kid Home" style="width:390px; height:844px; background:#0F1020; border:1px solid #2E3150; border-radius:32px; overflow:hidden; display:flex; flex-direction:column; color:#F5F5F8;">
+        <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 28px; font-size:13px; font-weight:600;"><span>9:41</span><span style="color:#A8ABCE;">●●●</span></div>
+        <div style="flex:1; overflow:hidden; display:flex; flex-direction:column; padding:12px 20px 0; gap:16px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; flex-direction:column; gap:2px;"><div style="font-size:13px; color:#A8ABCE;">Good morning</div><div style="font-size:22px; font-weight:700;">Hi, Maya</div></div>
+            <div style="width:40px; height:40px; border-radius:999px; background:#F58D3A; color:#1B1C2E; display:flex; align-items:center; justify-content:center; font-weight:700;">M</div>
+          </div>
+          <div style="background:#1F2139; border:1px solid #2E3150; border-radius:16px; overflow:hidden;">
+            <div style="height:6px; background:linear-gradient(90deg,#F58D3A 0%,#E7426B 50%,#1B1C2E 100%);"></div>
+            <div style="padding:20px 24px; display:flex; flex-direction:column; gap:12px;">
+              <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#A8ABCE;">My balance</div>
+              <div style="font-size:44px; font-weight:800; letter-spacing:-0.02em; line-height:1;">$24.50</div>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; justify-content:space-between; font-size:12px;"><span style="color:#A8ABCE;">Concert tickets</span><span style="color:#F58D3A; font-weight:600;">$24.50 / $40</span></div>
+                <div style="height:8px; background:#0A0B18; border-radius:999px; overflow:hidden;"><div style="width:61%; height:100%; background:linear-gradient(90deg,#F58D3A,#E7426B); border-radius:999px;"></div></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#A8ABCE;">Things to do — earn $7.50</div>
+            <div style="font-size:12px; font-weight:600; color:#F58D3A;">2 of 4 done</div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px; overflow:hidden;">
+            <div style="display:flex; align-items:center; gap:14px; background:#1F2139; border:1px solid #2E3150; border-radius:16px; padding:14px 16px;">
+              <div style="width:28px; height:28px; border-radius:999px; border:2px solid #4A4E78; flex-shrink:0;"></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px;"><div style="font-size:15px; font-weight:600;">Take out the trash</div><div style="font-size:12px; color:#6C6F94;">Daily · before 6 pm</div></div>
+              <div style="font-size:13px; font-weight:700; color:#3CC88A; background:rgba(60,200,138,0.12); border-radius:999px; padding:6px 12px;">+$2.00</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:14px; background:#1F2139; border:1px solid #2E3150; border-radius:16px; padding:14px 16px;">
+              <div style="width:28px; height:28px; border-radius:999px; border:2px solid #4A4E78; flex-shrink:0;"></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px;"><div style="font-size:15px; font-weight:600;">Empty the dishwasher</div><div style="font-size:12px; color:#6C6F94;">Daily</div></div>
+              <div style="font-size:13px; font-weight:700; color:#3CC88A; background:rgba(60,200,138,0.12); border-radius:999px; padding:6px 12px;">+$1.50</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:14px; background:#1F2139; border:1px solid #2E3150; border-radius:16px; padding:14px 16px;">
+              <div style="width:28px; height:28px; border-radius:999px; border:2px solid #4A4E78; flex-shrink:0;"></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px;"><div style="font-size:15px; font-weight:600;">Mow the lawn</div><div style="font-size:12px; color:#6C6F94;">Weekly · Saturday</div></div>
+              <div style="font-size:13px; font-weight:700; color:#3CC88A; background:rgba(60,200,138,0.12); border-radius:999px; padding:6px 12px;">+$4.00</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:14px; background:#1F2139; border:1px solid #2E3150; border-radius:16px; padding:14px 16px; opacity:0.6;">
+              <div style="width:28px; height:28px; border-radius:999px; background:#3CC88A; color:#0F1020; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; flex-shrink:0;">✓</div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px;"><div style="font-size:15px; font-weight:600; text-decoration:line-through;">Feed the dog</div><div style="font-size:12px; color:#6C6F94;">Waiting for approval</div></div>
+              <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; color:#FFB547; background:rgba(255,181,71,0.12); border-radius:999px; padding:6px 12px;">PENDING</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; border-top:1px solid #2E3150; background:#151728; padding:12px 24px 24px; justify-content:space-around;">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#F58D3A;"><div style="font-size:18px;">⌂</div><div style="font-size:11px; font-weight:600;">Home</div></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#6C6F94;"><div style="font-size:18px;">☑</div><div style="font-size:11px; font-weight:600;">Tasks</div></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#6C6F94;"><div style="font-size:18px;">↕</div><div style="font-size:11px; font-weight:600;">Bank</div></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#6C6F94;"><div style="font-size:18px;">≡</div><div style="font-size:11px; font-weight:600;">History</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 · CELEBRATION -->
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#6C6F94;">03 · Task done — celebration</div>
+      <div data-screen-label="03 Celebration" style="width:390px; height:844px; background:#0F1020; border:1px solid #2E3150; border-radius:32px; overflow:hidden; display:flex; flex-direction:column; color:#F5F5F8; position:relative;">
+        <div style="position:absolute; top:90px; left:48px; width:10px; height:18px; background:#F58D3A; border-radius:2px; transform:rotate(24deg);"></div>
+        <div style="position:absolute; top:140px; right:60px; width:10px; height:18px; background:#E7426B; border-radius:2px; transform:rotate(-32deg);"></div>
+        <div style="position:absolute; top:210px; left:96px; width:8px; height:8px; background:#4D9EFF; border-radius:999px;"></div>
+        <div style="position:absolute; top:110px; right:130px; width:8px; height:8px; background:#3CC88A; border-radius:999px;"></div>
+        <div style="position:absolute; top:250px; right:44px; width:10px; height:18px; background:#FFB547; border-radius:2px; transform:rotate(12deg);"></div>
+        <div style="position:absolute; top:180px; left:40px; width:8px; height:8px; background:#E7426B; border-radius:999px;"></div>
+        <div style="position:absolute; top:280px; left:150px; width:10px; height:18px; background:#4D9EFF; border-radius:2px; transform:rotate(-18deg);"></div>
+        <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 28px; font-size:13px; font-weight:600;"><span>9:41</span><span style="color:#A8ABCE;">●●●</span></div>
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; gap:20px;">
+          <div style="width:120px; height:120px; border-radius:999px; background:linear-gradient(180deg,#F58D3A 0%,#E7426B 100%); display:flex; align-items:center; justify-content:center; font-size:56px; font-weight:800; color:#1B1C2E; box-shadow:0 0 0 12px rgba(245,141,58,0.12), 0 0 0 24px rgba(245,141,58,0.05);">✓</div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+            <div style="font-size:28px; font-weight:800; letter-spacing:-0.02em;">Nice work, Maya!</div>
+            <div style="font-size:15px; color:#A8ABCE;">Take out the trash — done</div>
+          </div>
+          <div style="font-size:56px; font-weight:800; color:#3CC88A; letter-spacing:-0.02em;">+$2.00</div>
+          <div style="display:flex; align-items:center; gap:8px; font-size:11px; font-weight:600; letter-spacing:0.08em; color:#FFB547; background:rgba(255,181,71,0.12); border-radius:999px; padding:8px 16px;"><div style="width:6px; height:6px; border-radius:999px; background:#FFB547;"></div>WAITING FOR DAD'S OK</div>
+          <div style="font-size:13px; color:#6C6F94; text-align:center; max-width:260px;">Your money lands in your balance as soon as it's approved.</div>
+        </div>
+        <div style="padding:24px; display:flex; flex-direction:column; gap:12px;">
+          <div style="background:linear-gradient(90deg,#F58D3A,#E7426B); color:#1B1C2E; font-size:16px; font-weight:700; border-radius:16px; padding:16px; text-align:center;">Next task → Empty the dishwasher</div>
+          <div style="font-size:14px; font-weight:600; color:#A8ABCE; text-align:center; padding:8px;">Back to home</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 · DEPOSIT -->
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#6C6F94;">04 · Deposit cash (parent)</div>
+      <div data-screen-label="04 Deposit" style="width:390px; height:844px; background:#0F1020; border:1px solid #2E3150; border-radius:32px; overflow:hidden; display:flex; flex-direction:column; color:#F5F5F8;">
+        <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 28px; font-size:13px; font-weight:600;"><span>9:41</span><span style="color:#A8ABCE;">●●●</span></div>
+        <div style="display:flex; align-items:center; gap:12px; padding:12px 20px;">
+          <div style="width:36px; height:36px; border-radius:999px; border:1px solid #2E3150; display:flex; align-items:center; justify-content:center; color:#A8ABCE;">←</div>
+          <div style="font-size:18px; font-weight:700;">Deposit cash</div>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; padding:8px 24px; gap:20px;">
+          <div style="display:flex; align-items:center; gap:12px; background:#1F2139; border:1px solid #2E3150; border-radius:12px; padding:12px 16px;">
+            <div style="width:36px; height:36px; border-radius:999px; background:#F58D3A; color:#1B1C2E; display:flex; align-items:center; justify-content:center; font-weight:700;">M</div>
+            <div style="flex:1; font-size:15px; font-weight:600;">Maya's balance</div>
+            <div style="font-size:15px; font-weight:700; color:#3CC88A;">$24.50</div>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:8px; padding:16px 0;">
+            <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#A8ABCE;">Amount</div>
+            <div style="font-size:56px; font-weight:800; letter-spacing:-0.02em;">$10<span style="color:#6C6F94;">.00</span></div>
+            <div style="display:flex; gap:8px;">
+              <div style="font-size:13px; font-weight:600; border:1px solid #2E3150; border-radius:999px; padding:8px 16px; color:#A8ABCE;">$5</div>
+              <div style="font-size:13px; font-weight:600; border:1px solid #F58D3A; border-radius:999px; padding:8px 16px; color:#F58D3A; background:rgba(245,141,58,0.1);">$10</div>
+              <div style="font-size:13px; font-weight:600; border:1px solid #2E3150; border-radius:999px; padding:8px 16px; color:#A8ABCE;">$20</div>
+              <div style="font-size:13px; font-weight:600; border:1px solid #2E3150; border-radius:999px; padding:8px 16px; color:#A8ABCE;">$50</div>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#A8ABCE;">Note</div>
+            <div style="background:#1F2139; border:1px solid #2E3150; border-radius:12px; padding:14px 16px; font-size:15px; color:#6C6F94;">Birthday money from Grandma</div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:auto;">
+            <div style="text-align:center; font-size:22px; font-weight:600; padding:14px; border-radius:12px; background:#1F2139;">1</div>
+            <div style="text-align:center; font-size:22px; font-weight:600; padding:14px; border-radius:12px; background:#1F2139;">2</div>
+            <div style="text-align:center; font-size:22px; font-weight:600; padding:14px; border-radius:12px; background:#1F2139;">3</div>
+            <div style="text-align:center; font-size:22px; font-weight:600; padding:14px; border-radius:12px; background:#1F2139;">4</div>
+            <div style="text-align:center; font-size:22px; font-weight:600; padding:14px; border-radius:12px; background:#1F2139;">5</div>
+            <div style="text-align:center; font-size:22px; font-weight:600; padding:14px; border-radius:12px; background:#1F2139;">6</div>
+            <div style="text-align:center; font-size:22px; font-weight:600; padding:14px; border-radius:12px; background:#1F2139;">7</div>
+            <div style="text-align:center; font-size:22px; font-weight:600; padding:14px; border-radius:12px; background:#1F2139;">8</div>
+            <div style="text-align:center; font-size:22px; font-weight:600; padding:14px; border-radius:12px; background:#1F2139;">9</div>
+            <div style="text-align:center; font-size:22px; font-weight:600; padding:14px; border-radius:12px; color:#6C6F94;">.</div>
+            <div style="text-align:center; font-size:22px; font-weight:600; padding:14px; border-radius:12px; background:#1F2139;">0</div>
+            <div style="text-align:center; font-size:22px; font-weight:600; padding:14px; border-radius:12px; color:#6C6F94;">⌫</div>
+          </div>
+        </div>
+        <div style="padding:16px 24px 24px;">
+          <div style="background:linear-gradient(90deg,#F58D3A,#E7426B); color:#1B1C2E; font-size:16px; font-weight:700; border-radius:16px; padding:16px; text-align:center;">Add $10.00 to Maya's balance</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 · WITHDRAW -->
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#6C6F94;">05 · Withdraw / spend</div>
+      <div data-screen-label="05 Withdraw" style="width:390px; height:844px; background:#0F1020; border:1px solid #2E3150; border-radius:32px; overflow:hidden; display:flex; flex-direction:column; color:#F5F5F8;">
+        <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 28px; font-size:13px; font-weight:600;"><span>9:41</span><span style="color:#A8ABCE;">●●●</span></div>
+        <div style="display:flex; align-items:center; gap:12px; padding:12px 20px;">
+          <div style="width:36px; height:36px; border-radius:999px; border:1px solid #2E3150; display:flex; align-items:center; justify-content:center; color:#A8ABCE;">←</div>
+          <div style="font-size:18px; font-weight:700;">Take money out</div>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; padding:8px 24px; gap:24px;">
+          <div style="background:#1F2139; border:1px solid #2E3150; border-radius:16px; padding:20px 24px; display:flex; flex-direction:column; gap:4px;">
+            <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#A8ABCE;">Available</div>
+            <div style="font-size:36px; font-weight:800; letter-spacing:-0.02em;">$24.50</div>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+            <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#A8ABCE;">Amount</div>
+            <div style="font-size:56px; font-weight:800; letter-spacing:-0.02em; color:#E7426B;">−$8<span style="color:#6C6F94;">.00</span></div>
+            <div style="display:flex; gap:8px;">
+              <div style="font-size:13px; font-weight:600; border:1px solid #2E3150; border-radius:999px; padding:8px 16px; color:#A8ABCE;">$5</div>
+              <div style="font-size:13px; font-weight:600; border:1px solid #2E3150; border-radius:999px; padding:8px 16px; color:#A8ABCE;">$10</div>
+              <div style="font-size:13px; font-weight:600; border:1px solid #2E3150; border-radius:999px; padding:8px 16px; color:#A8ABCE;">All of it</div>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#A8ABCE;">What's it for?</div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <div style="font-size:13px; font-weight:600; border:1px solid #E7426B; background:rgba(231,66,107,0.1); color:#E7426B; border-radius:999px; padding:8px 16px;">Going out</div>
+              <div style="font-size:13px; font-weight:600; border:1px solid #2E3150; color:#A8ABCE; border-radius:999px; padding:8px 16px;">Food</div>
+              <div style="font-size:13px; font-weight:600; border:1px solid #2E3150; color:#A8ABCE; border-radius:999px; padding:8px 16px;">Gift</div>
+              <div style="font-size:13px; font-weight:600; border:1px solid #2E3150; color:#A8ABCE; border-radius:999px; padding:8px 16px;">Other</div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; background:rgba(255,181,71,0.08); border:1px solid rgba(255,181,71,0.3); border-radius:12px; padding:14px 16px;">
+            <div style="font-size:18px; font-weight:800; color:#FFB547;">!</div>
+            <div style="font-size:13px; color:#A8ABCE; line-height:1.4;">Heads up — this moves your Concert tickets goal back to <span style="color:#FFB547; font-weight:600;">41%</span>.</div>
+          </div>
+        </div>
+        <div style="padding:16px 24px 24px; display:flex; flex-direction:column; gap:12px;">
+          <div style="background:#E7426B; color:#1B1C2E; font-size:16px; font-weight:700; border-radius:16px; padding:16px; text-align:center;">Ask to withdraw $8.00</div>
+          <div style="font-size:12px; color:#6C6F94; text-align:center;">A parent hands over the cash and confirms.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6 · HISTORY -->
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#6C6F94;">06 · History / ledger</div>
+      <div data-screen-label="06 History" style="width:390px; height:844px; background:#0F1020; border:1px solid #2E3150; border-radius:32px; overflow:hidden; display:flex; flex-direction:column; color:#F5F5F8;">
+        <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 28px; font-size:13px; font-weight:600;"><span>9:41</span><span style="color:#A8ABCE;">●●●</span></div>
+        <div style="padding:12px 20px; display:flex; flex-direction:column; gap:16px;">
+          <div style="font-size:22px; font-weight:700;">History</div>
+          <div style="display:flex; gap:8px;">
+            <div style="font-size:12px; font-weight:600; background:#F58D3A; color:#1B1C2E; border-radius:999px; padding:8px 14px;">All</div>
+            <div style="font-size:12px; font-weight:600; border:1px solid #2E3150; color:#A8ABCE; border-radius:999px; padding:8px 14px;">Earned</div>
+            <div style="font-size:12px; font-weight:600; border:1px solid #2E3150; color:#A8ABCE; border-radius:999px; padding:8px 14px;">Deposits</div>
+            <div style="font-size:12px; font-weight:600; border:1px solid #2E3150; color:#A8ABCE; border-radius:999px; padding:8px 14px;">Withdrawn</div>
+          </div>
+        </div>
+        <div style="flex:1; overflow:hidden; padding:4px 20px; display:flex; flex-direction:column; gap:16px;">
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#6C6F94;">Today</div>
+            <div style="display:flex; align-items:center; gap:14px; background:#1F2139; border:1px solid #2E3150; border-radius:12px; padding:14px 16px;">
+              <div style="width:36px; height:36px; border-radius:999px; background:rgba(60,200,138,0.12); color:#3CC88A; display:flex; align-items:center; justify-content:center; font-weight:700;">✓</div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px;"><div style="font-size:14px; font-weight:600;">Feed the dog</div><div style="font-size:12px; color:#6C6F94;">Chore · approved by Dad</div></div>
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;"><div style="font-size:15px; font-weight:700; color:#3CC88A;">+$1.00</div><div style="font-size:11px; color:#6C6F94;">$24.50</div></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:14px; background:#1F2139; border:1px solid #2E3150; border-radius:12px; padding:14px 16px;">
+              <div style="width:36px; height:36px; border-radius:999px; background:rgba(77,158,255,0.12); color:#4D9EFF; display:flex; align-items:center; justify-content:center; font-weight:700;">↓</div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px;"><div style="font-size:14px; font-weight:600;">Cash deposit</div><div style="font-size:12px; color:#6C6F94;">Birthday money from Grandma</div></div>
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;"><div style="font-size:15px; font-weight:700; color:#4D9EFF;">+$10.00</div><div style="font-size:11px; color:#6C6F94;">$23.50</div></div>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#6C6F94;">Yesterday</div>
+            <div style="display:flex; align-items:center; gap:14px; background:#1F2139; border:1px solid #2E3150; border-radius:12px; padding:14px 16px;">
+              <div style="width:36px; height:36px; border-radius:999px; background:rgba(231,66,107,0.12); color:#E7426B; display:flex; align-items:center; justify-content:center; font-weight:700;">↑</div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px;"><div style="font-size:14px; font-weight:600;">Going out</div><div style="font-size:12px; color:#6C6F94;">Withdrawal · confirmed by Mom</div></div>
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;"><div style="font-size:15px; font-weight:700; color:#E7426B;">−$8.00</div><div style="font-size:11px; color:#6C6F94;">$13.50</div></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:14px; background:#1F2139; border:1px solid #2E3150; border-radius:12px; padding:14px 16px;">
+              <div style="width:36px; height:36px; border-radius:999px; background:rgba(60,200,138,0.12); color:#3CC88A; display:flex; align-items:center; justify-content:center; font-weight:700;">✓</div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px;"><div style="font-size:14px; font-weight:600;">Mow the lawn</div><div style="font-size:12px; color:#6C6F94;">Chore · approved by Dad</div></div>
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;"><div style="font-size:15px; font-weight:700; color:#3CC88A;">+$4.00</div><div style="font-size:11px; color:#6C6F94;">$21.50</div></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:14px; background:#1F2139; border:1px solid #2E3150; border-radius:12px; padding:14px 16px;">
+              <div style="width:36px; height:36px; border-radius:999px; background:rgba(60,200,138,0.12); color:#3CC88A; display:flex; align-items:center; justify-content:center; font-weight:700;">✓</div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px;"><div style="font-size:14px; font-weight:600;">Take out the trash</div><div style="font-size:12px; color:#6C6F94;">Chore · approved by Mom</div></div>
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;"><div style="font-size:15px; font-weight:700; color:#3CC88A;">+$2.00</div><div style="font-size:11px; color:#6C6F94;">$17.50</div></div>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#6C6F94;">This week</div>
+            <div style="display:flex; align-items:center; justify-content:space-between; background:#151728; border:1px dashed #2E3150; border-radius:12px; padding:14px 16px;">
+              <div style="font-size:13px; color:#A8ABCE;">Earned <span style="color:#3CC88A; font-weight:700;">$12.50</span> · Spent <span style="color:#E7426B; font-weight:700;">$8.00</span></div>
+              <div style="font-size:13px; font-weight:700; color:#F58D3A;">Saved 64%</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; border-top:1px solid #2E3150; background:#151728; padding:12px 24px 24px; justify-content:space-around;">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#6C6F94;"><div style="font-size:18px;">⌂</div><div style="font-size:11px; font-weight:600;">Home</div></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#6C6F94;"><div style="font-size:18px;">☑</div><div style="font-size:11px; font-weight:600;">Tasks</div></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#6C6F94;"><div style="font-size:18px;">↕</div><div style="font-size:11px; font-weight:600;">Bank</div></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#F58D3A;"><div style="font-size:18px;">≡</div><div style="font-size:11px; font-weight:600;">History</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7 · PARENT OVERVIEW -->
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#6C6F94;">07 · Parent — family overview</div>
+      <div data-screen-label="07 Parent Overview" style="width:390px; height:844px; background:#0F1020; border:1px solid #2E3150; border-radius:32px; overflow:hidden; display:flex; flex-direction:column; color:#F5F5F8;">
+        <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 28px; font-size:13px; font-weight:600;"><span>9:41</span><span style="color:#A8ABCE;">●●●</span></div>
+        <div style="padding:12px 20px; display:flex; align-items:center; justify-content:space-between;">
+          <div style="display:flex; flex-direction:column; gap:2px;"><div style="font-size:13px; color:#A8ABCE;">Parent mode</div><div style="font-size:22px; font-weight:700;">The Riveras</div></div>
+          <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; color:#4D9EFF; background:rgba(77,158,255,0.12); border-radius:999px; padding:8px 14px;">PARENT</div>
+        </div>
+        <div style="flex:1; overflow:hidden; padding:4px 20px; display:flex; flex-direction:column; gap:16px;">
+          <div style="background:#1F2139; border:1px solid #2E3150; border-radius:16px; overflow:hidden;">
+            <div style="height:6px; background:linear-gradient(90deg,#F58D3A 0%,#E7426B 50%,#1B1C2E 100%);"></div>
+            <div style="padding:16px 20px; display:flex; align-items:center; justify-content:space-between;">
+              <div style="display:flex; flex-direction:column; gap:2px;"><div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#A8ABCE;">Total held for kids</div><div style="font-size:32px; font-weight:800; letter-spacing:-0.02em;">$73.75</div></div>
+              <div style="font-size:12px; color:#6C6F94; text-align:right;">3 kids<br>this week +$17.50</div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:14px; background:rgba(255,181,71,0.08); border:1px solid rgba(255,181,71,0.35); border-radius:16px; padding:16px;">
+            <div style="width:40px; height:40px; border-radius:999px; background:#FFB547; color:#1B1C2E; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px;">3</div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:2px;"><div style="font-size:15px; font-weight:700;">Approvals waiting</div><div style="font-size:12px; color:#A8ABCE;">Maya ×1 · Leo ×2</div></div>
+            <div style="font-size:13px; font-weight:700; color:#FFB547;">Review →</div>
+          </div>
+          <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#A8ABCE;">Kids</div>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:center; gap:14px; background:#1F2139; border:1px solid #2E3150; border-radius:16px; padding:16px;">
+              <div style="width:44px; height:44px; border-radius:999px; background:#F58D3A; color:#1B1C2E; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:18px;">M</div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px;"><div style="font-size:16px; font-weight:600;">Maya · 15</div><div style="font-size:12px; color:#6C6F94;">4 chores this week · 1 pending</div></div>
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;"><div style="font-size:16px; font-weight:700; color:#3CC88A;">$24.50</div><div style="font-size:11px; color:#F58D3A;">Goal 61%</div></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:14px; background:#1F2139; border:1px solid #2E3150; border-radius:16px; padding:16px;">
+              <div style="width:44px; height:44px; border-radius:999px; background:#4D9EFF; color:#1B1C2E; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:18px;">L</div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px;"><div style="font-size:16px; font-weight:600;">Leo · 13</div><div style="font-size:12px; color:#6C6F94;">3 chores this week · 2 pending</div></div>
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;"><div style="font-size:16px; font-weight:700; color:#3CC88A;">$11.25</div><div style="font-size:11px; color:#6C6F94;">No goal</div></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:14px; background:#1F2139; border:1px solid #2E3150; border-radius:16px; padding:16px;">
+              <div style="width:44px; height:44px; border-radius:999px; background:#E7426B; color:#1B1C2E; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:18px;">Z</div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px;"><div style="font-size:16px; font-weight:600;">Zoe · 16</div><div style="font-size:12px; color:#6C6F94;">All chores done ✓</div></div>
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;"><div style="font-size:16px; font-weight:700; color:#3CC88A;">$38.00</div><div style="font-size:11px; color:#F58D3A;">Goal 84%</div></div>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div style="background:#1F2139; border:1px solid #2E3150; border-radius:12px; padding:14px; text-align:center; font-size:13px; font-weight:600;">↓ Deposit</div>
+            <div style="background:#1F2139; border:1px solid #2E3150; border-radius:12px; padding:14px; text-align:center; font-size:13px; font-weight:600;">＋ New chore</div>
+          </div>
+        </div>
+        <div style="display:flex; border-top:1px solid #2E3150; background:#151728; padding:12px 24px 24px; justify-content:space-around;">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#F58D3A;"><div style="font-size:18px;">⌂</div><div style="font-size:11px; font-weight:600;">Family</div></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#6C6F94;"><div style="font-size:18px;">☑</div><div style="font-size:11px; font-weight:600;">Chores</div></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#6C6F94;"><div style="font-size:18px;">✓</div><div style="font-size:11px; font-weight:600;">Approvals</div></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#6C6F94;"><div style="font-size:18px;">≡</div><div style="font-size:11px; font-weight:600;">Ledger</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8 · MANAGE CHORES -->
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#6C6F94;">08 · Parent — manage chores</div>
+      <div data-screen-label="08 Manage Chores" style="width:390px; height:844px; background:#0F1020; border:1px solid #2E3150; border-radius:32px; overflow:hidden; display:flex; flex-direction:column; color:#F5F5F8;">
+        <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 28px; font-size:13px; font-weight:600;"><span>9:41</span><span style="color:#A8ABCE;">●●●</span></div>
+        <div style="padding:12px 20px; display:flex; align-items:center; justify-content:space-between;">
+          <div style="font-size:22px; font-weight:700;">Chore list</div>
+          <div style="font-size:13px; font-weight:700; background:linear-gradient(90deg,#F58D3A,#E7426B); color:#1B1C2E; border-radius:999px; padding:10px 18px;">＋ New chore</div>
+        </div>
+        <div style="padding:0 20px 12px; display:flex; gap:8px;">
+          <div style="font-size:12px; font-weight:600; background:#F58D3A; color:#1B1C2E; border-radius:999px; padding:8px 14px;">All kids</div>
+          <div style="font-size:12px; font-weight:600; border:1px solid #2E3150; color:#A8ABCE; border-radius:999px; padding:8px 14px;">Maya</div>
+          <div style="font-size:12px; font-weight:600; border:1px solid #2E3150; color:#A8ABCE; border-radius:999px; padding:8px 14px;">Leo</div>
+          <div style="font-size:12px; font-weight:600; border:1px solid #2E3150; color:#A8ABCE; border-radius:999px; padding:8px 14px;">Zoe</div>
+        </div>
+        <div style="flex:1; overflow:hidden; padding:4px 20px; display:flex; flex-direction:column; gap:10px;">
+          <div style="background:#1F2139; border:1px solid #2E3150; border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div style="font-size:15px; font-weight:600;">Take out the trash</div>
+              <div style="width:40px; height:24px; border-radius:999px; background:#3CC88A; display:flex; align-items:center; justify-content:flex-end; padding:2px;"><div style="width:20px; height:20px; border-radius:999px; background:#0F1020;"></div></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div style="font-size:12px; font-weight:700; color:#3CC88A; background:rgba(60,200,138,0.12); border-radius:999px; padding:4px 10px;">$2.00</div>
+              <div style="font-size:12px; color:#6C6F94; background:#2A2D47; border-radius:4px; padding:4px 8px;">Daily</div>
+              <div style="flex:1;"></div>
+              <div style="display:flex;">
+                <div style="width:24px; height:24px; border-radius:999px; background:#F58D3A; color:#1B1C2E; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid #1F2139;">M</div>
+                <div style="width:24px; height:24px; border-radius:999px; background:#4D9EFF; color:#1B1C2E; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid #1F2139; margin-left:-6px;">L</div>
+              </div>
+            </div>
+          </div>
+          <div style="background:#1F2139; border:1px solid #2E3150; border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div style="font-size:15px; font-weight:600;">Empty the dishwasher</div>
+              <div style="width:40px; height:24px; border-radius:999px; background:#3CC88A; display:flex; align-items:center; justify-content:flex-end; padding:2px;"><div style="width:20px; height:20px; border-radius:999px; background:#0F1020;"></div></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div style="font-size:12px; font-weight:700; color:#3CC88A; background:rgba(60,200,138,0.12); border-radius:999px; padding:4px 10px;">$1.50</div>
+              <div style="font-size:12px; color:#6C6F94; background:#2A2D47; border-radius:4px; padding:4px 8px;">Daily</div>
+              <div style="flex:1;"></div>
+              <div style="display:flex;">
+                <div style="width:24px; height:24px; border-radius:999px; background:#F58D3A; color:#1B1C2E; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid #1F2139;">M</div>
+              </div>
+            </div>
+          </div>
+          <div style="background:#1F2139; border:1px solid #2E3150; border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div style="font-size:15px; font-weight:600;">Mow the lawn</div>
+              <div style="width:40px; height:24px; border-radius:999px; background:#3CC88A; display:flex; align-items:center; justify-content:flex-end; padding:2px;"><div style="width:20px; height:20px; border-radius:999px; background:#0F1020;"></div></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div style="font-size:12px; font-weight:700; color:#3CC88A; background:rgba(60,200,138,0.12); border-radius:999px; padding:4px 10px;">$4.00</div>
+              <div style="font-size:12px; color:#6C6F94; background:#2A2D47; border-radius:4px; padding:4px 8px;">Weekly · Sat</div>
+              <div style="flex:1;"></div>
+              <div style="display:flex;">
+                <div style="width:24px; height:24px; border-radius:999px; background:#E7426B; color:#1B1C2E; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid #1F2139;">Z</div>
+              </div>
+            </div>
+          </div>
+          <div style="background:#1F2139; border:1px solid #2E3150; border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:10px; opacity:0.55;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div style="font-size:15px; font-weight:600;">Rake the leaves</div>
+              <div style="width:40px; height:24px; border-radius:999px; background:#2A2D47; display:flex; align-items:center; justify-content:flex-start; padding:2px;"><div style="width:20px; height:20px; border-radius:999px; background:#6C6F94;"></div></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div style="font-size:12px; font-weight:700; color:#A8ABCE; background:#2A2D47; border-radius:999px; padding:4px 10px;">$3.00</div>
+              <div style="font-size:12px; color:#6C6F94; background:#2A2D47; border-radius:4px; padding:4px 8px;">Paused · seasonal</div>
+            </div>
+          </div>
+          <div style="border:1px dashed #2E3150; border-radius:16px; padding:20px; display:flex; align-items:center; justify-content:center; gap:8px; color:#6C6F94; font-size:14px; font-weight:600;">＋ Add a one-time bonus task</div>
+        </div>
+        <div style="display:flex; border-top:1px solid #2E3150; background:#151728; padding:12px 24px 24px; justify-content:space-around;">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#6C6F94;"><div style="font-size:18px;">⌂</div><div style="font-size:11px; font-weight:600;">Family</div></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#F58D3A;"><div style="font-size:18px;">☑</div><div style="font-size:11px; font-weight:600;">Chores</div></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#6C6F94;"><div style="font-size:18px;">✓</div><div style="font-size:11px; font-weight:600;">Approvals</div></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#6C6F94;"><div style="font-size:18px;">≡</div><div style="font-size:11px; font-weight:600;">Ledger</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9 · APPROVALS -->
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#6C6F94;">09 · Parent — approvals</div>
+      <div data-screen-label="09 Approvals" style="width:390px; height:844px; background:#0F1020; border:1px solid #2E3150; border-radius:32px; overflow:hidden; display:flex; flex-direction:column; color:#F5F5F8;">
+        <div style="height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 28px; font-size:13px; font-weight:600;"><span>9:41</span><span style="color:#A8ABCE;">●●●</span></div>
+        <div style="padding:12px 20px; display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:22px; font-weight:700;">Approvals</div>
+          <div style="font-size:13px; color:#A8ABCE;">3 tasks waiting · $4.50 total</div>
+        </div>
+        <div style="flex:1; overflow:hidden; padding:8px 20px; display:flex; flex-direction:column; gap:12px;">
+          <div style="background:#1F2139; border:1px solid #2E3150; border-radius:16px; padding:18px; display:flex; flex-direction:column; gap:14px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:40px; height:40px; border-radius:999px; background:#F58D3A; color:#1B1C2E; display:flex; align-items:center; justify-content:center; font-weight:700;">M</div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px;"><div style="font-size:15px; font-weight:600;">Feed the dog</div><div style="font-size:12px; color:#6C6F94;">Maya · today 8:12 am</div></div>
+              <div style="font-size:15px; font-weight:700; color:#3CC88A;">+$1.00</div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div style="background:#3CC88A; color:#0F1020; font-size:14px; font-weight:700; border-radius:12px; padding:12px; text-align:center;">Approve ✓</div>
+              <div style="border:1px solid #2E3150; color:#A8ABCE; font-size:14px; font-weight:600; border-radius:12px; padding:12px; text-align:center;">Send back</div>
+            </div>
+          </div>
+          <div style="background:#1F2139; border:1px solid #2E3150; border-radius:16px; padding:18px; display:flex; flex-direction:column; gap:14px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:40px; height:40px; border-radius:999px; background:#4D9EFF; color:#1B1C2E; display:flex; align-items:center; justify-content:center; font-weight:700;">L</div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px;"><div style="font-size:15px; font-weight:600;">Make the bed</div><div style="font-size:12px; color:#6C6F94;">Leo · today 7:45 am</div></div>
+              <div style="font-size:15px; font-weight:700; color:#3CC88A;">+$1.00</div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div style="background:#3CC88A; color:#0F1020; font-size:14px; font-weight:700; border-radius:12px; padding:12px; text-align:center;">Approve ✓</div>
+              <div style="border:1px solid #2E3150; color:#A8ABCE; font-size:14px; font-weight:600; border-radius:12px; padding:12px; text-align:center;">Send back</div>
+            </div>
+          </div>
+          <div style="background:#1F2139; border:1px solid #2E3150; border-radius:16px; padding:18px; display:flex; flex-direction:column; gap:14px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:40px; height:40px; border-radius:999px; background:#4D9EFF; color:#1B1C2E; display:flex; align-items:center; justify-content:center; font-weight:700;">L</div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px;"><div style="font-size:15px; font-weight:600;">Water the plants</div><div style="font-size:12px; color:#6C6F94;">Leo · yesterday 5:30 pm</div></div>
+              <div style="font-size:15px; font-weight:700; color:#3CC88A;">+$2.50</div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div style="background:#3CC88A; color:#0F1020; font-size:14px; font-weight:700; border-radius:12px; padding:12px; text-align:center;">Approve ✓</div>
+              <div style="border:1px solid #2E3150; color:#A8ABCE; font-size:14px; font-weight:600; border-radius:12px; padding:12px; text-align:center;">Send back</div>
+            </div>
+          </div>
+          <div style="background:linear-gradient(90deg,#F58D3A,#E7426B); color:#1B1C2E; font-size:15px; font-weight:700; border-radius:16px; padding:16px; text-align:center;">Approve all · pay out $4.50</div>
+        </div>
+        <div style="display:flex; border-top:1px solid #2E3150; background:#151728; padding:12px 24px 24px; justify-content:space-around;">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#6C6F94;"><div style="font-size:18px;">⌂</div><div style="font-size:11px; font-weight:600;">Family</div></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#6C6F94;"><div style="font-size:18px;">☑</div><div style="font-size:11px; font-weight:600;">Chores</div></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#F58D3A;"><div style="font-size:18px;">✓</div><div style="font-size:11px; font-weight:600;">Approvals</div></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#6C6F94;"><div style="font-size:18px;">≡</div><div style="font-size:11px; font-weight:600;">Ledger</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

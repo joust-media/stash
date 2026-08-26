@@ -1,0 +1,18 @@
+/* Semantic aliases over the Figma variables in fig-tokens.css */
+:root{
+  --color-primary: var(--leaf-green);        /* #2FBF71 — LOCKED, the brand */
+  --color-primary-deep: var(--leaf-deep);    /* #1E8F52 — hover / pressed */
+  --color-reward: var(--acorn-gold);         /* #F2B93B — earned moments only */
+  --surface-app: var(--warm-cream);          /* #FAF3E3 — app background */
+  --surface-card: rgb(255,255,255);
+  --surface-inset: var(--warm-cream);        /* cream inset panels inside cards */
+  --text-heading: var(--stash-chestnut);     /* #8B4A2B — his fur */
+  --text-body: var(--mustache-brown);        /* #5C3319 — his mustache */
+  --text-on-primary: rgb(255,255,255);
+  --text-eyebrow: var(--leaf-deep);
+  --accent-warning: rgb(217,107,74);         /* coral — "never" / caution accents */
+  --border-cream: rgb(229,219,199);
+  --shadow-card: 0px 6px 18px 0px rgba(92,51,25,0.1);
+  --shadow-card-strong: 0px 6px 18px 0px rgba(92,51,25,0.12);
+  --shadow-button: 0px 4px 14px 0px rgba(0,0,0,0.14);
+}

@@ -1,0 +1,11 @@
+/* Generated from Figma Variables. First mode = :root default.
+   FLOAT tokens are unitless — multiply by 1px in calc() where a length is needed. */
+
+:root {
+  --acorn-gold: rgb(242,185,59); /* @kind color */
+  --leaf-deep: rgb(30,143,82); /* @kind color */
+  --leaf-green: rgb(47,191,113); /* @kind color */
+  --mustache-brown: rgb(92,51,25); /* @kind color */
+  --stash-chestnut: rgb(139,74,43); /* @kind color */
+  --warm-cream: rgb(250,243,227); /* @kind color */
+}

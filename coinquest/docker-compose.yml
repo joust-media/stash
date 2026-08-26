@@ -1,0 +1,35 @@
+# Local parity with the deployed setup: app + MySQL, one command.
+#   docker compose up --build   →   http://localhost:8787
+services:
+  db:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: stash
+      MYSQL_DATABASE: stash
+    ports:
+      - '3307:3306'
+    volumes:
+      - stash-db:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-uroot', '-pstash']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 8787
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: stash
+      MYSQL_DATABASE: stash
+    ports:
+      - '8787:8787'
+
+volumes:
+  stash-db:

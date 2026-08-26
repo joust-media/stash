@@ -1,0 +1,17 @@
+# macOS / Google Drive
+.DS_Store
+.tmp.drivedownload/
+.tmp.driveupload/
+Icon?
+
+# Node (coinquest/.gitignore covers its own subtree too)
+node_modules/
+dist/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Scratch output from the asset pipeline
+assets/stash/processed/**/*-pockets.png

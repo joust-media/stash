@@ -1,0 +1,212 @@
+import { Hono } from 'hono'
+import type { PoolConnection } from 'mysql2/promise'
+import { all, tx } from '../db.ts'
+import type { ApprovalItem, ApprovalsPayload } from '../../shared/types.ts'
+import { HttpError, insertTransaction, iso, requireParent, timeLabel, toPerson } from '../lib.ts'
+
+export const approvalRoutes = new Hono()
+
+/*
+ * One queue for everything a parent has to clear. Nothing enters a stash
+ * without an achievement approval, and nothing leaves one without a withdrawal
+ * approval — both live here so a parent has a single place to look.
+ */
+
+function personFrom(r: Record<string, any>) {
+  return toPerson({
+    id: r.u_id,
+    family_id: r.family_id,
+    name: r.name,
+    role: r.role,
+    age: r.age,
+    avatar_color: r.avatar_color,
+    pin_hash: r.pin_hash,
+    nickname: r.nickname,
+    mascot_pose: r.mascot_pose,
+    about: r.about,
+  })
+}
+
+const USER_COLUMNS = `u.id AS u_id, u.family_id, u.name, u.role, u.age, u.avatar_color,
+                      u.pin_hash, u.nickname, u.mascot_pose, u.about`
+
+/** GET /api/approvals — achievements waiting to pay out, plus cash requests. */
+approvalRoutes.get('/', async (c) => {
+  const [completions, withdrawals] = await Promise.all([
+    all(
+      `SELECT tc.id, tc.completed_at, ch.title, ch.reward_cents, ${USER_COLUMNS}
+         FROM task_completions tc
+         JOIN chores ch ON ch.id = tc.chore_id
+         JOIN users  u  ON u.id  = tc.kid_id
+        WHERE tc.status = 'pending'
+        ORDER BY tc.completed_at DESC`,
+    ),
+    all(
+      `SELECT w.id, w.amount_cents, w.category, w.note, w.requested_at, ${USER_COLUMNS}
+         FROM withdrawal_requests w
+         JOIN users u ON u.id = w.kid_id
+        WHERE w.status = 'pending'
+        ORDER BY w.requested_at DESC`,
+    ),
+  ])
+
+  const items: ApprovalItem[] = [
+    ...completions.map((r) => ({
+      kind: 'achievement' as const,
+      id: Number(r.id),
+      kid: personFrom(r),
+      title: r.title as string,
+      amountCents: Number(r.reward_cents),
+      at: iso(r.completed_at),
+      timeLabel: timeLabel(r.completed_at),
+      note: null,
+    })),
+    ...withdrawals.map((r) => ({
+      kind: 'withdrawal' as const,
+      id: Number(r.id),
+      kid: personFrom(r),
+      title: r.category as string,
+      amountCents: -Number(r.amount_cents),
+      at: iso(r.requested_at),
+      timeLabel: timeLabel(r.requested_at),
+      note: (r.note as string | null) ?? null,
+    })),
+  ].sort((a, b) => b.at.localeCompare(a.at))
+
+  const payload: ApprovalsPayload = {
+    items,
+    payoutCents: items.filter((i) => i.kind === 'achievement').reduce((s, i) => s + i.amountCents, 0),
+    withdrawalCents: items
+      .filter((i) => i.kind === 'withdrawal')
+      .reduce((s, i) => s + Math.abs(i.amountCents), 0),
+  }
+  return c.json(payload)
+})
+
+/** Approving is what creates the money — see the handoff's rules. */
+async function approveAchievement(conn: PoolConnection, completionId: number, parentId: number) {
+  const [rows] = await conn.query(
+    `SELECT tc.id, tc.kid_id, tc.status, ch.reward_cents
+       FROM task_completions tc JOIN chores ch ON ch.id = tc.chore_id
+      WHERE tc.id = ? FOR UPDATE`,
+    [completionId],
+  )
+  const row = (rows as Record<string, any>[])[0]
+  if (!row) throw new HttpError(404, 'That is not in the queue')
+  if (row.status !== 'pending') throw new HttpError(409, 'Already reviewed')
+
+  const at = new Date()
+  await conn.query(
+    `UPDATE task_completions SET status = 'approved', reviewed_by = ?, reviewed_at = ? WHERE id = ?`,
+    [parentId, at, row.id],
+  )
+  await insertTransaction(
+    {
+      kidId: Number(row.kid_id),
+      type: 'earn',
+      amountCents: Number(row.reward_cents),
+      relatedCompletionId: Number(row.id),
+      createdBy: parentId,
+      createdAt: at,
+    },
+    conn,
+  )
+  return Number(row.reward_cents)
+}
+
+/** Confirming a withdrawal is the moment the cash actually leaves the stash. */
+async function approveWithdrawal(conn: PoolConnection, requestId: number, parentId: number) {
+  const [rows] = await conn.query(`SELECT * FROM withdrawal_requests WHERE id = ? FOR UPDATE`, [requestId])
+  const row = (rows as Record<string, any>[])[0]
+  if (!row) throw new HttpError(404, 'That request does not exist')
+  if (row.status !== 'pending') throw new HttpError(409, 'Already handled')
+
+  const t = await insertTransaction(
+    {
+      kidId: Number(row.kid_id),
+      type: 'withdraw',
+      amountCents: -Number(row.amount_cents),
+      category: row.category,
+      note: row.note,
+      createdBy: parentId,
+    },
+    conn,
+  )
+  await conn.query(
+    `UPDATE withdrawal_requests
+        SET status = 'confirmed', confirmed_by = ?, confirmed_at = ?, transaction_id = ?
+      WHERE id = ?`,
+    [parentId, new Date(), t.id, row.id],
+  )
+  return Number(row.amount_cents)
+}
+
+approvalRoutes.post('/:kind/:id/approve', async (c) => {
+  const { parentId } = await c.req.json<{ parentId: number }>()
+  const parent = await requireParent(parentId)
+  const kind = c.req.param('kind')
+  const id = Number(c.req.param('id'))
+
+  if (kind === 'achievement') {
+    const paidCents = await tx((conn) => approveAchievement(conn, id, parent.id))
+    return c.json({ paidCents })
+  }
+  if (kind === 'withdrawal') {
+    const handedOverCents = await tx((conn) => approveWithdrawal(conn, id, parent.id))
+    return c.json({ handedOverCents })
+  }
+  throw new HttpError(400, 'Unknown approval kind')
+})
+
+approvalRoutes.post('/:kind/:id/reject', async (c) => {
+  const { parentId } = await c.req.json<{ parentId: number }>()
+  const parent = await requireParent(parentId)
+  const kind = c.req.param('kind')
+  const id = Number(c.req.param('id'))
+
+  if (kind === 'achievement') {
+    // "Send back" returns the task to the kid's list; no money moves.
+    const result = await tx(async (conn) => {
+      const [r] = await conn.query(
+        `UPDATE task_completions SET status = 'rejected', reviewed_by = ?, reviewed_at = ?
+          WHERE id = ? AND status = 'pending'`,
+        [parent.id, new Date(), id],
+      )
+      return r as { affectedRows: number }
+    })
+    if (result.affectedRows === 0) throw new HttpError(409, 'Already reviewed')
+    return c.json({ ok: true })
+  }
+
+  if (kind === 'withdrawal') {
+    const result = await tx(async (conn) => {
+      const [r] = await conn.query(
+        `UPDATE withdrawal_requests SET status = 'declined', confirmed_by = ?, confirmed_at = ?
+          WHERE id = ? AND status = 'pending'`,
+        [parent.id, new Date(), id],
+      )
+      return r as { affectedRows: number }
+    })
+    if (result.affectedRows === 0) throw new HttpError(409, 'Already handled')
+    return c.json({ ok: true })
+  }
+
+  throw new HttpError(400, 'Unknown approval kind')
+})
+
+/**
+ * Bulk approve covers achievements only. Handing over cash is a physical act
+ * per request, so withdrawals are never cleared in bulk.
+ */
+approvalRoutes.post('/approve-all', async (c) => {
+  const { parentId } = await c.req.json<{ parentId: number }>()
+  const parent = await requireParent(parentId)
+
+  const pending = await all<{ id: number }>(`SELECT id FROM task_completions WHERE status = 'pending'`)
+  const paidCents = await tx(async (conn) => {
+    let total = 0
+    for (const row of pending) total += await approveAchievement(conn, Number(row.id), parent.id)
+    return total
+  })
+  return c.json({ approved: pending.length, paidCents })
+})

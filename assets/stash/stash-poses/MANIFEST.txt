@@ -1,0 +1,25 @@
+STASH — CHARACTER POSE ASSETS
+Generated 2026-08-25
+
+IN THIS ZIP
+  stash-SRC-original-pose-sheet.png   Original locked sheet (5 poses). Ground truth.
+  stash-S00-identity-plate.png        APPROVED. 4-view turnaround. Master reference.
+  stash-S06-tada.png                  APPROVED. Jump-spin. First login, big wins, rung-up.
+
+NOT IN THIS ZIP — download from Higgsfield, then re-add
+  stash-S07-wave-hello.png            Onboarding, "Who's earning today?"
+  stash-S08-checking-the-time.png     In-progress task tile
+  stash-S09-waiting-patiently.png     "Waiting on a parent"
+  stash-S10-warm-shrug.png            Task sent back
+  stash-S11-almost-there.png          80% nudge, "Only $0.50 to go!"
+  stash-S12-presenting.png            Empty states, store screenshots
+  stash-S13-fast-asleep.png           Idle, splash
+
+STILL TO GENERATE
+  Tier 2 (parent register)  S-14 .. S-17
+  Tier 3 (states, polish)   S-18 .. S-22
+  Tier 4 (brand, marketing) S-23 .. S-26
+
+NOTE — these are white-background renders with a baked contact shadow.
+Run background removal before use. Shadow gets reapplied in CSS so he sits
+correctly on both Leaf Green (#2FBF71) and Warm Cream (#FAF3E3).

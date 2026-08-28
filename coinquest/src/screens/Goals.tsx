@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
-import type { Goal } from '../../shared/types'
+import type { Goal, SuggestedItem } from '../../shared/types'
 import { api } from '../lib/api'
 import { useSession } from '../lib/session'
 import { money } from '../lib/format'
 import { CHORE_ICONS, CHORE_ICON_KEYS, ChoreIcon, ChoreIconBadge } from '../components/ChoreIcon'
+import { GoodStuffRow, MatchBadge, MatchLine } from '../components/GoodStuff'
 import { Hero } from '../components/Hero'
 import { HERO_POSE } from '../components/Mascot'
+import { Mascot } from '../components/Mascot'
 import { Money } from '../components/Money'
 import {
   Button,
@@ -37,6 +39,9 @@ export function Goals() {
   const queryClient = useQueryClient()
   const { parent } = useSession()
   const [editing, setEditing] = useState<Goal | 'new' | null>(null)
+  // The Good Stuff item the kid is looking at before committing to it.
+  const [picking, setPicking] = useState<SuggestedItem | null>(null)
+  const [claiming, setClaiming] = useState<Goal | null>(null)
 
   // A kid on their own device acts as themselves; a parent acts as the parent.
   const actorId = parent?.id ?? kidId
@@ -58,6 +63,27 @@ export function Goals() {
 
   const remove = useMutation({
     mutationFn: (goal: Goal) => api.deleteGoal(goal.id, actorId),
+    onSettled: invalidate,
+  })
+
+  const adopt = useMutation({
+    mutationFn: (item: SuggestedItem) =>
+      api.adoptSuggestion(item.id, { actorId, kidId, makeActive: true }),
+    onSuccess: () => setPicking(null),
+    onSettled: invalidate,
+  })
+
+  // A claim is an ordinary cash-out for the kid's share, carrying the goal.
+  // Same endpoint, same approvals queue, same everything.
+  const claim = useMutation({
+    mutationFn: (goal: Goal) =>
+      api.requestWithdrawal({
+        kidId,
+        amountCents: goal.targetCents,
+        category: goal.title,
+        goalId: goal.id,
+      }),
+    onSuccess: () => setClaiming(null),
     onSettled: invalidate,
   })
 
@@ -123,7 +149,11 @@ export function Goals() {
           {goals.map((goal) => (
             <Card
               key={goal.id}
-              className={cx('flex flex-col gap-3 p-4', goal.active && 'border-leaf border-2')}
+              className={cx(
+                'flex flex-col gap-3 p-4',
+                goal.active && 'border-leaf border-2',
+                goal.claimed && 'opacity-70',
+              )}
             >
               <div className="flex items-center gap-3">
                 <ChoreIconBadge icon={goal.icon} tone={goal.active ? 'leaf' : 'muted'} size={42} />
@@ -132,15 +162,52 @@ export function Goals() {
                     {goal.title}
                   </span>
                   <span className="text-mustache/65 text-[13px] leading-tight">
-                    {goal.progressPct >= 100
-                      ? 'Reached it!'
-                      : `${money(goal.remainingCents)} to go · ${goal.progressPct}%`}
+                    {goal.claimed
+                      ? 'Got it!'
+                      : goal.claimPending
+                        ? 'Waiting on a parent'
+                        : goal.progressPct >= 100
+                          ? 'Reached it!'
+                          : `${money(goal.remainingCents)} to go · ${goal.progressPct}%`}
                   </span>
+                  {/* The badge stays for the life of the goal so the deal stays visible. */}
+                  {goal.matchAmountCents ? (
+                    <MatchLine
+                      payer={goal.matchPayerName ?? home.data.approverName}
+                      matchAmountCents={goal.matchAmountCents}
+                      className="pt-0.5"
+                    />
+                  ) : null}
                 </div>
-                <Money cents={goal.targetCents} size={22} />
+                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                  <Money cents={goal.targetCents} size={22} />
+                  {goal.matchPercent ? (
+                    <MatchBadge payer={goal.matchPayerName ?? home.data.approverName} matchPercent={goal.matchPercent} />
+                  ) : null}
+                </div>
               </div>
 
               <ProgressBar pct={goal.progressPct} />
+
+              {!goal.claimed && goal.claimable &&
+                (claiming?.id === goal.id ? (
+                  <div className="bg-leaf/10 rounded-inset flex flex-col gap-2 p-3">
+                    <p className="text-mustache text-[14px] leading-snug font-bold">
+                      Ask {goal.matchPayerName ?? home.data.approverName} for {goal.title}?
+                      {goal.matchAmountCents
+                        ? ` You saved ${money(goal.targetCents)}, ${goal.matchPayerName ?? home.data.approverName} adds ${money(goal.matchAmountCents)}.`
+                        : ` That's ${money(goal.targetCents)} from your stash.`}
+                    </p>
+                    <Button disabled={claim.isPending} onClick={() => claim.mutate(goal)}>
+                      Ask for it
+                    </Button>
+                    <SmallButton variant="quiet" onClick={() => setClaiming(null)}>
+                      Never mind
+                    </SmallButton>
+                  </div>
+                ) : (
+                  <Button onClick={() => setClaiming(goal)}>I&rsquo;m ready for this</Button>
+                ))}
 
               <div className="border-line-cream flex items-center justify-between gap-2 border-t pt-2">
                 {goal.active ? (
@@ -165,6 +232,24 @@ export function Goals() {
               </div>
             </Card>
           ))}
+
+          {/*
+            Always under the kid's own goals. The kid decides what they are
+            saving for; a parent's suggestions are an offer, not a directive.
+          */}
+          {picking ? (
+            <AdoptPanel
+              item={picking}
+              hasActiveGoal={active !== null}
+              activeTitle={active?.title ?? null}
+              busy={adopt.isPending}
+              error={adopt.error ? (adopt.error as Error).message : null}
+              onConfirm={() => adopt.mutate(picking)}
+              onCancel={() => setPicking(null)}
+            />
+          ) : (
+            <GoodStuffRow items={home.data.suggestions} onPick={setPicking} busyId={null} />
+          )}
         </div>
       )}
 
@@ -282,6 +367,71 @@ function GoalForm({
       <SmallButton variant="quiet" onClick={onCancel}>
         Cancel
       </SmallButton>
+    </Card>
+  )
+}
+
+/**
+ * Looking at one of the parent's suggestions before committing to it. Stash is
+ * in the acorn hug — the locked pose for savings goals.
+ *
+ * The split is stated in plain words rather than implied by a price. Nothing
+ * here is struck through and nothing is called a discount.
+ */
+function AdoptPanel({
+  item,
+  hasActiveGoal,
+  activeTitle,
+  busy,
+  error,
+  onConfirm,
+  onCancel,
+}: {
+  item: SuggestedItem
+  hasActiveGoal: boolean
+  activeTitle: string | null
+  busy: boolean
+  error: string | null
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  return (
+    <Card className="animate-fade-up flex flex-col items-center gap-3 p-5 text-center">
+      <Mascot pose="acorn-hug" height={120} />
+
+      <div className="flex flex-col items-center gap-1">
+        <span className="display text-chestnut text-[22px] leading-tight font-extrabold">{item.name}</span>
+        <MatchBadge payer={item.addedByName} matchPercent={item.matchPercent} />
+      </div>
+
+      <div className="flex flex-col items-center gap-0.5">
+        <Money cents={item.kidShareCents} size={44} tone="leaf" />
+        <span className="text-mustache/65 text-[13px]">
+          {item.matchAmountCents > 0
+            ? `You save ${money(item.kidShareCents)}. ${item.addedByName} pays the other ${money(item.matchAmountCents)}.`
+            : `You save ${money(item.kidShareCents)}.`}
+        </span>
+      </div>
+
+      {item.note && <p className="text-mustache text-[14px] leading-snug">&ldquo;{item.note}&rdquo;</p>}
+
+      {/* Switching keeps the old goal — it is deactivated, never deleted. */}
+      {hasActiveGoal && activeTitle && (
+        <p className="text-mustache/70 text-[13px] leading-snug">
+          Stash will start tracking this one instead of {activeTitle}. You keep them both.
+        </p>
+      )}
+
+      {error && <p className="text-coral text-[14px] font-bold">{error}</p>}
+
+      <div className="flex w-full flex-col gap-2 pt-1">
+        <Button disabled={busy} onClick={onConfirm}>
+          Start saving for this
+        </Button>
+        <SmallButton variant="quiet" onClick={onCancel}>
+          Never mind
+        </SmallButton>
+      </div>
     </Card>
   )
 }

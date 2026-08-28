@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { all, one } from '../db.ts'
 import { achievementMilestone, savingsMilestone } from '../milestones.ts'
+import { suggestionsFor } from './goodStuff.ts'
 import type {
   KidHome,
   KidRequest,
@@ -128,6 +129,8 @@ kidRoutes.get('/:id/home', async (c) => {
     savings: savingsMilestone(balanceCents),
     heldCents: Number(held?.n ?? 0),
     requests,
+    // Filtered in SQL — a sibling's suggestions never reach this client.
+    suggestions: await suggestionsFor(kid.id, Number(kid.family_id)),
   }
   return c.json(payload)
 })
@@ -149,12 +152,14 @@ kidRoutes.get('/:id/ledger', async (c) => {
   const rows = await all(
     `SELECT t.*, ch.title AS chore_title,
             reviewer.name AS reviewer_name,
-            creator.name  AS creator_name
+            creator.name  AS creator_name,
+            g.title AS goal_title, g.match_amount_cents
        FROM transactions t
        LEFT JOIN task_completions tc ON tc.id = t.related_completion_id
        LEFT JOIN chores ch          ON ch.id = tc.chore_id
        LEFT JOIN users reviewer     ON reviewer.id = tc.reviewed_by
        LEFT JOIN users creator      ON creator.id = t.created_by
+       LEFT JOIN goals g            ON g.id = t.goal_id
       WHERE t.kid_id = ? AND (? IS NULL OR t.type = ?)
       ORDER BY t.id DESC`,
     [kid.id, type, type],
@@ -170,13 +175,16 @@ kidRoutes.get('/:id/ledger', async (c) => {
           ? (r.chore_title ?? 'Achievement')
           : r.type === 'deposit'
             ? 'Cash added'
-            : (r.category ?? 'Taken out'),
+            : (r.goal_title ?? r.category ?? 'Taken out'),
       meta:
         r.type === 'earn'
           ? `Achievement · approved by ${r.reviewer_name ?? 'a parent'}`
           : r.type === 'deposit'
             ? (r.note ?? `Added by ${r.creator_name ?? 'a parent'}`)
-            : `Taken out · handed over by ${r.creator_name ?? 'a parent'}`,
+            : // A matched claim says so, because the kid only paid their share.
+              r.goal_title && Number(r.match_amount_cents) > 0
+              ? `Your half · handed over by ${r.creator_name ?? 'a parent'}`
+              : `Taken out · handed over by ${r.creator_name ?? 'a parent'}`,
       amountCents: Number(r.amount_cents),
       balanceAfterCents: Number(r.balance_after_cents),
       createdAt: iso(r.created_at),

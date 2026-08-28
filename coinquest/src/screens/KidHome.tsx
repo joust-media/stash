@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { money } from '../lib/format'
+import { ChoreIconBadge } from '../components/ChoreIcon'
 import { useCancelTask, useEndTask, useStartTask } from '../components/TaskList'
 import { OutstandingRequests, TaskGrid, TaskTile } from '../components/TaskTile'
 import { Hero } from '../components/Hero'
@@ -78,6 +79,28 @@ export function KidHome() {
             <div className="bg-gold/20 rounded-card text-chestnut px-4 py-3 text-center text-[15px] font-bold">
               {milestone.nudge}
             </div>
+          )}
+
+          {/*
+            Nothing to save for, but a parent has put something up — point at it
+            rather than showing the generic "no goals yet" line.
+          */}
+          {!data.goal && data.suggestions.some((s) => s.adoptedGoalId === null) && (
+            <button
+              type="button"
+              onClick={() => navigate(`/kid/${kidId}/goals`)}
+              className="pressable bg-surface rounded-card border-leaf/30 flex items-center gap-3 border-2 px-4 py-3.5 text-left shadow-[var(--shadow-card)]"
+            >
+              <ChoreIconBadge icon="sparkle" tone="gold" size={38} />
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="display text-chestnut text-[16px] leading-tight font-bold">
+                  {data.approverName} put something up
+                </span>
+                <span className="text-mustache/65 text-[13px] leading-tight">
+                  Things they&rsquo;d go halves on — pick one to save for.
+                </span>
+              </span>
+            </button>
           )}
 
           <OutstandingRequests requests={data.requests} />

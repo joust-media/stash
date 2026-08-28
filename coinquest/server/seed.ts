@@ -33,6 +33,7 @@ export async function wipe(): Promise<void> {
   try {
     await conn.query('SET FOREIGN_KEY_CHECKS = 0')
     for (const table of [
+      'suggested_items',
       'withdrawal_requests',
       'transactions',
       'task_completions',
@@ -151,6 +152,33 @@ export async function seed(): Promise<void> {
     await goal(leo, 'Skate helmet', 3500, 'sport', false)
     await goal(zoe, 'New skateboard', 4500, 'sport', true)
     await goal(zoe, 'Camera', 15000, 'sparkle', false)
+
+    /*
+     * The Good Stuff — things the Riveras would go halves on. Deliberately the
+     * kind of thing a parent is glad to see wanted: a chemistry set, not a toy.
+     */
+    const suggest = (
+      name: string,
+      priceCents: number,
+      matchPercent: number,
+      icon: string,
+      note: string | null,
+      visibleTo: number | null,
+      by: number,
+    ) =>
+      insert(
+        `INSERT INTO suggested_items
+           (family_id, created_by_user_id, name, price_cents, match_percent, image_key, note, visible_to_user_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [familyId, by, name, priceCents, matchPercent, icon, note, visibleTo],
+      )
+
+    await suggest('Chemistry set', 4000, 50, 'sparkle', "You've been asking about this for months.", null, dad)
+    await suggest('Microscope', 6500, 50, 'book', null, null, dad)
+    await suggest('Museum membership', 5000, 60, 'book', 'Gets you in free all year.', null, mom)
+    await suggest('Guitar lessons — first block', 12000, 70, 'music', 'Ten lessons to start.', maya, mom)
+    await suggest('Good skate helmet', 3500, 40, 'sport', 'Non-negotiable if you want the board.', leo, dad)
+    await suggest('Sketchbook and pencils', 2200, 25, 'book', null, zoe, mom)
 
     /** A finished achievement a parent already approved: pays out at review time. */
     const approved = async (

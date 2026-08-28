@@ -216,6 +216,38 @@ const DDL = [
      CONSTRAINT fk_wd_tx FOREIGN KEY (transaction_id) REFERENCES transactions(id),
      CONSTRAINT chk_wd_amount CHECK (amount_cents > 0)
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+  /*
+   * The Good Stuff: things a parent would like the kid to have, each carrying a
+   * share the parent commits to covering. A kid adopts one and it becomes an
+   * ordinary goal priced at their share alone.
+   *
+   * This is a list a parent types, not a catalogue — no merchants, no feeds, no
+   * external anything. That distinction is deliberate and load-bearing.
+   *
+   * Rows are never hard-deleted; `active = 0` retires one while leaving every
+   * goal already adopted from it untouched.
+   */
+  `CREATE TABLE IF NOT EXISTS suggested_items (
+     id                 INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+     family_id          INT UNSIGNED NOT NULL,
+     created_by_user_id INT UNSIGNED NOT NULL,
+     name               VARCHAR(80) NOT NULL,
+     price_cents        INT UNSIGNED NOT NULL,
+     match_percent      TINYINT UNSIGNED NOT NULL DEFAULT 0,
+     image_key          VARCHAR(120) NULL,
+     note               VARCHAR(160) NULL,
+     visible_to_user_id INT UNSIGNED NULL,
+     active             TINYINT(1) NOT NULL DEFAULT 1,
+     created_at         DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+     updated_at         DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+     KEY idx_suggested_family (family_id, active),
+     CONSTRAINT fk_si_family  FOREIGN KEY (family_id) REFERENCES families(id),
+     CONSTRAINT fk_si_creator FOREIGN KEY (created_by_user_id) REFERENCES users(id),
+     CONSTRAINT fk_si_visible FOREIGN KEY (visible_to_user_id) REFERENCES users(id),
+     CONSTRAINT chk_si_price CHECK (price_cents > 0),
+     CONSTRAINT chk_si_match CHECK (match_percent BETWEEN 0 AND 90)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 ]
 
 /*
@@ -232,6 +264,23 @@ const ADDED_COLUMNS: { table: string; column: string; definition: string }[] = [
   { table: 'chores', column: 'icon', definition: 'VARCHAR(40) NULL' },
   { table: 'goals', column: 'icon', definition: 'VARCHAR(40) NULL' },
   { table: 'withdrawal_requests', column: 'note', definition: 'VARCHAR(240) NULL' },
+
+  /*
+   * The Good Stuff. The three goal columns are a SNAPSHOT taken at adoption and
+   * are never read back through to `suggested_items`: if a parent later edits or
+   * retires the item, a goal already adopted from it does not move. A kid must
+   * never watch their target change.
+   *
+   * No foreign key on `suggested_item_id` for exactly that reason — the goal has
+   * to outlive the row it came from.
+   */
+  { table: 'goals', column: 'suggested_item_id', definition: 'INT UNSIGNED NULL' },
+  { table: 'goals', column: 'match_percent_locked', definition: 'TINYINT UNSIGNED NULL' },
+  { table: 'goals', column: 'match_amount_cents', definition: 'INT UNSIGNED NULL' },
+
+  // Carries a claim from request through approval to the ledger line.
+  { table: 'withdrawal_requests', column: 'goal_id', definition: 'INT UNSIGNED NULL' },
+  { table: 'transactions', column: 'goal_id', definition: 'INT UNSIGNED NULL' },
 ]
 
 /*

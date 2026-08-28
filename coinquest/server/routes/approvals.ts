@@ -42,9 +42,11 @@ approvalRoutes.get('/', async (c) => {
         ORDER BY tc.completed_at DESC`,
     ),
     all(
-      `SELECT w.id, w.amount_cents, w.category, w.note, w.requested_at, ${USER_COLUMNS}
+      `SELECT w.id, w.amount_cents, w.category, w.note, w.requested_at, w.goal_id,
+              g.match_amount_cents, ${USER_COLUMNS}
          FROM withdrawal_requests w
          JOIN users u ON u.id = w.kid_id
+         LEFT JOIN goals g ON g.id = w.goal_id
         WHERE w.status = 'pending'
         ORDER BY w.requested_at DESC`,
     ),
@@ -70,6 +72,8 @@ approvalRoutes.get('/', async (c) => {
       at: iso(r.requested_at),
       timeLabel: timeLabel(r.requested_at),
       note: (r.note as string | null) ?? null,
+      // A Good Stuff claim carries what the parent committed to covering.
+      matchAmountCents: r.match_amount_cents == null ? null : Number(r.match_amount_cents),
     })),
   ].sort((a, b) => b.at.localeCompare(a.at))
 
@@ -128,6 +132,9 @@ async function approveWithdrawal(conn: PoolConnection, requestId: number, parent
       amountCents: -Number(row.amount_cents),
       category: row.category,
       note: row.note,
+      // Only the kid's share ever moves. The parent's match is not a
+      // transaction and never enters the balance — it is not money the kid has.
+      goalId: row.goal_id == null ? null : Number(row.goal_id),
       createdBy: parentId,
     },
     conn,
@@ -138,6 +145,26 @@ async function approveWithdrawal(conn: PoolConnection, requestId: number, parent
       WHERE id = ?`,
     [parentId, new Date(), t.id, row.id],
   )
+
+  /*
+   * A claimed goal is finished — the kid has the thing. Leaving it active would
+   * put them straight back to "$16.50 to go" for something already sitting on
+   * their desk, so it steps aside and the next goal takes over the tracker.
+   * The row stays: it is their history, and the ledger points at it.
+   */
+  if (row.goal_id != null) {
+    await conn.query('UPDATE goals SET active = 0 WHERE id = ?', [row.goal_id])
+    const [others] = await conn.query(
+      `SELECT id FROM goals
+        WHERE kid_id = ? AND id <> ?
+          AND id NOT IN (SELECT goal_id FROM transactions WHERE goal_id IS NOT NULL)
+        ORDER BY id LIMIT 1`,
+      [row.kid_id, row.goal_id],
+    )
+    const next = (others as { id: number }[])[0]
+    if (next) await conn.query('UPDATE goals SET active = 1 WHERE id = ?', [next.id])
+  }
+
   return Number(row.amount_cents)
 }
 

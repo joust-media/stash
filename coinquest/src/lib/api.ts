@@ -10,6 +10,8 @@ import type {
   Person,
   ProfileUpdate,
   Schedule,
+  SuggestedItem,
+  SuggestedItemRow,
 } from '../../shared/types'
 
 export class ApiError extends Error {
@@ -63,6 +65,17 @@ export interface GoalInput {
   active?: boolean
 }
 
+export interface SuggestedItemInput {
+  parentId: number
+  name: string
+  priceCents: number
+  matchPercent: number
+  icon?: string | null
+  note?: string | null
+  /** Null shows it to every kid in the family. */
+  visibleToUserId?: number | null
+}
+
 export interface ChoreInput {
   parentId: number
   title: string
@@ -105,8 +118,14 @@ export const api = {
 
   deposit: (input: { kidId: number; amountCents: number; note?: string; parentId: number }) =>
     send<{ balanceCents: number }>('POST', '/money/deposits', input),
-  requestWithdrawal: (input: { kidId: number; amountCents: number; category: string; note?: string }) =>
-    send<{ id: number }>('POST', '/money/withdrawals', input),
+  requestWithdrawal: (input: {
+    kidId: number
+    amountCents: number
+    category: string
+    note?: string
+    /** Set to claim a Good Stuff goal — the server re-derives the amount. */
+    goalId?: number | null
+  }) => send<{ id: number }>('POST', '/money/withdrawals', input),
 
   createChore: (input: ChoreInput) => send<{ id: number }>('POST', '/chores', input),
   updateChore: (id: number, input: ChoreInput) => send<{ ok: true }>('PUT', `/chores/${id}`, input),
@@ -119,6 +138,20 @@ export const api = {
   setGoalActive: (id: number, actorId: number) =>
     send<{ ok: true }>('PATCH', `/goals/${id}/active`, { actorId }),
   deleteGoal: (id: number, actorId: number) => send<{ ok: true }>('DELETE', `/goals/${id}`, { actorId }),
+
+  goodStuff: (kidId: number) => request<SuggestedItem[]>(`/good-stuff?kidId=${kidId}`),
+  allGoodStuff: () => request<SuggestedItemRow[]>('/good-stuff/all'),
+  createSuggestion: (input: SuggestedItemInput) => send<{ id: number }>('POST', '/good-stuff', input),
+  updateSuggestion: (id: number, input: SuggestedItemInput) =>
+    send<{ ok: true }>('PUT', `/good-stuff/${id}`, input),
+  deleteSuggestion: (id: number, parentId: number) =>
+    send<{ ok: true; stillSavedFor: number }>('DELETE', `/good-stuff/${id}`, { parentId }),
+  adoptSuggestion: (id: number, input: { actorId: number; kidId: number; makeActive?: boolean }) =>
+    send<{ goalId: number; kidShareCents: number; matchAmountCents: number; claimable: boolean }>(
+      'POST',
+      `/good-stuff/${id}/adopt`,
+      input,
+    ),
 
   person: (id: number) => request<Person>(`/users/${id}`),
   updateProfile: (id: number, input: ProfileUpdate & { actorId: number }) =>

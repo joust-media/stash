@@ -41,6 +41,55 @@ export interface Goal {
   icon: string | null
   /** How much is still to save. */
   remainingCents: number
+  /**
+   * Set when this goal was adopted from a Good Stuff suggestion. These are a
+   * snapshot taken at adoption — the parent's item can change or vanish and
+   * these do not move.
+   */
+  suggestedItemId: number | null
+  matchPercent: number | null
+  /** What the parent covers. Never money the kid has, never a transaction. */
+  matchAmountCents: number | null
+  /** Which parent committed to the match — "Dad pays half", not just "a parent". */
+  matchPayerName: string | null
+  /** The kid has saved their share and can ask for it. */
+  claimable: boolean
+  /** A parent has handed this over. It is done, and cannot be claimed twice. */
+  claimed: boolean
+  /** Asked for, waiting on a parent. */
+  claimPending: boolean
+}
+
+/**
+ * A thing a parent would like the kid to have, with the share they commit to
+ * covering. Not a product, not a catalogue entry — a line a parent typed.
+ */
+export interface SuggestedItem {
+  id: number
+  name: string
+  /** The full price of the thing. */
+  priceCents: number
+  matchPercent: number
+  /** What the kid saves for. The number that becomes their goal target. */
+  kidShareCents: number
+  /** What the parent covers. */
+  matchAmountCents: number
+  icon: string | null
+  note: string | null
+  /** Null means every kid in the family sees it. */
+  visibleToUserId: number | null
+  /** Set when this kid has already adopted it. */
+  adoptedGoalId: number | null
+  /** Who added it, for "Dad pays half". */
+  addedByName: string
+}
+
+/** The parent's view: the same item plus who has taken it up. */
+export interface SuggestedItemRow extends SuggestedItem {
+  active: boolean
+  visibleToName: string | null
+  /** Names of kids saving for it. Editing price or match is locked once set. */
+  adoptedBy: string[]
 }
 
 export interface KidSummary extends Person {
@@ -117,6 +166,8 @@ export interface KidHome {
   requests: KidRequest[]
   /** Every goal this kid is saving towards; `goal` is the active one. */
   goals: Goal[]
+  /** The Good Stuff — parent suggestions this kid can see. Filtered server-side. */
+  suggestions: SuggestedItem[]
 }
 
 export interface LedgerEntry {
@@ -163,6 +214,8 @@ export interface ApprovalItem {
   timeLabel: string
   /** Withdrawals only: what the kid says it is for. */
   note: string | null
+  /** Set when the withdrawal is a Good Stuff claim — what the parent owes. */
+  matchAmountCents?: number | null
 }
 
 export interface ApprovalsPayload {

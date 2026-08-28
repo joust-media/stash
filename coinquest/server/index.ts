@@ -8,6 +8,7 @@ import { authRoutes } from './routes/auth.ts'
 import { choreRoutes } from './routes/chores.ts'
 import { familyRoutes } from './routes/family.ts'
 import { goalRoutes } from './routes/goals.ts'
+import { goodStuffRoutes } from './routes/goodStuff.ts'
 import { kidRoutes } from './routes/kids.ts'
 import { moneyRoutes } from './routes/money.ts'
 import { taskRoutes } from './routes/tasks.ts'
@@ -33,6 +34,7 @@ api.route('/kids', kidRoutes)
 api.route('/users', userRoutes)
 api.route('/chores', choreRoutes)
 api.route('/goals', goalRoutes)
+api.route('/good-stuff', goodStuffRoutes)
 api.route('/money', moneyRoutes)
 api.route('/approvals', approvalRoutes)
 api.route('/', taskRoutes)

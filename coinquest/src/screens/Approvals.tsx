@@ -104,11 +104,27 @@ export function Approvals() {
                   )}
                 </div>
 
-                {isWithdrawal && (
-                  <div className="flex items-center gap-2">
-                    <Chip tone="caution">Money leaving</Chip>
-                    {item.note && <span className="text-mustache/70 text-[13px]">{item.note}</span>}
+                {/*
+                  A Good Stuff claim says what each side is putting in, because
+                  the parent is agreeing to their share as well as to the payout.
+                */}
+                {isWithdrawal && item.matchAmountCents ? (
+                  <div className="bg-gold/15 rounded-inset flex flex-col gap-1 px-4 py-3">
+                    <span className="display text-chestnut text-[15px] leading-snug font-bold">
+                      {item.kid.name}&rsquo;s ready for the {item.title.toLowerCase()}.
+                    </span>
+                    <span className="text-mustache text-[13px] leading-snug">
+                      {item.kid.name} saved {money(Math.abs(item.amountCents))}. Your share is{' '}
+                      {money(item.matchAmountCents)}. Confirm once you&rsquo;ve sorted it out together.
+                    </span>
                   </div>
+                ) : (
+                  isWithdrawal && (
+                    <div className="flex items-center gap-2">
+                      <Chip tone="caution">Money leaving</Chip>
+                      {item.note && <span className="text-mustache/70 text-[13px]">{item.note}</span>}
+                    </div>
+                  )
                 )}
 
                 <div className="grid grid-cols-2 gap-2.5">

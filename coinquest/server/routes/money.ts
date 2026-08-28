@@ -38,15 +38,53 @@ moneyRoutes.post('/deposits', async (c) => {
  * the request; the money does not move until a parent approves it.
  */
 moneyRoutes.post('/withdrawals', async (c) => {
-  const { kidId, amountCents, category, note } = await c.req.json<{
+  const { kidId, amountCents, category, note, goalId } = await c.req.json<{
     kidId: number
     amountCents: number
     category: string
     note?: string
+    /** Set when this is a Good Stuff claim rather than a plain cash-out. */
+    goalId?: number | null
   }>()
   const kid = await requireKid(Number(kidId))
   const amount = Math.round(Number(amountCents))
   if (!Number.isFinite(amount) || amount <= 0) throw new HttpError(400, 'Enter an amount above $0')
+
+  /*
+   * A claim is the same request as any other cash-out — it just carries the
+   * goal. The amount is re-derived from the goal rather than trusted from the
+   * client, so a tampered request cannot ask for more than the kid's share.
+   */
+  let claimTitle: string | null = null
+  const claimGoalId = goalId ? Number(goalId) : null
+  if (claimGoalId) {
+    const goal = await one<{ kid_id: number; title: string; target_cents: number }>(
+      'SELECT kid_id, title, target_cents FROM goals WHERE id = ?',
+      [claimGoalId],
+    )
+    if (!goal) throw new HttpError(404, 'That goal does not exist')
+    if (Number(goal.kid_id) !== kid.id) throw new HttpError(403, 'That is not your goal')
+    if (amount !== Number(goal.target_cents)) {
+      throw new HttpError(400, 'A goal is claimed for its full share, not part of it')
+    }
+
+    // A goal is claimed once. Hiding the button is not enough — without this a
+    // kid with the balance for it could ask again for something already handed
+    // over, and pay for it twice.
+    const settled = await one<{ n: number }>(
+      'SELECT COUNT(*) AS n FROM transactions WHERE goal_id = ?',
+      [claimGoalId],
+    )
+    if (Number(settled?.n ?? 0) > 0) throw new HttpError(409, 'You already got this one')
+
+    const open = await one<{ n: number }>(
+      `SELECT COUNT(*) AS n FROM withdrawal_requests WHERE goal_id = ? AND status = 'pending'`,
+      [claimGoalId],
+    )
+    if (Number(open?.n ?? 0) > 0) throw new HttpError(409, 'You have already asked for this one')
+
+    claimTitle = goal.title
+  }
 
   const id = await tx(async (conn) => {
     const balance = await balanceOf(kid.id, conn, true)
@@ -63,9 +101,16 @@ moneyRoutes.post('/withdrawals', async (c) => {
     }
 
     const [result] = await conn.query(
-      `INSERT INTO withdrawal_requests (kid_id, amount_cents, category, note, status, requested_at)
-       VALUES (?, ?, ?, ?, 'pending', ?)`,
-      [kid.id, amount, category?.trim() || 'Other', note?.trim() || null, new Date()],
+      `INSERT INTO withdrawal_requests (kid_id, amount_cents, category, note, status, requested_at, goal_id)
+       VALUES (?, ?, ?, ?, 'pending', ?, ?)`,
+      [
+        kid.id,
+        amount,
+        claimTitle?.slice(0, 60) || category?.trim() || 'Other',
+        note?.trim() || null,
+        new Date(),
+        claimGoalId,
+      ],
     )
     return Number((result as { insertId: number }).insertId)
   })

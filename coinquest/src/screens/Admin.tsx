@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import type { ChoreCard, GoalRow, KidSummary, Schedule } from '../../shared/types'
-import { api, type ChoreInput } from '../lib/api'
+import type { ChoreCard, GoalRow, KidSummary, Schedule, SuggestedItemRow } from '../../shared/types'
+import { splitMatch } from '../../shared/money'
+import { api, type ChoreInput, type SuggestedItemInput } from '../lib/api'
 import { useSession } from '../lib/session'
 import { money } from '../lib/format'
+import { MatchBadge } from '../components/GoodStuff'
 import { Hero } from '../components/Hero'
 import { HERO_POSE } from '../components/Mascot'
 import { CHORE_ICONS, CHORE_ICON_KEYS, ChoreIcon, ChoreIconBadge } from '../components/ChoreIcon'
@@ -29,13 +31,17 @@ import {
   cx,
 } from '../components/ui'
 
-type Section = 'achievements' | 'goals' | 'people'
+type Section = 'achievements' | 'goals' | 'good-stuff' | 'people'
 
 const SECTIONS: { key: Section; label: string }[] = [
   { key: 'achievements', label: 'Achievements' },
   { key: 'goals', label: 'Goals' },
+  { key: 'good-stuff', label: 'Good stuff' },
   { key: 'people', label: 'People' },
 ]
+
+/** A match is set in tens, not typed. It is a decision, not a calculation. */
+const MATCH_STEPS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90]
 
 const SCHEDULES: { key: Schedule; label: string }[] = [
   { key: 'daily', label: 'Daily' },
@@ -59,7 +65,7 @@ export function Admin() {
         <Hero
           eyebrow="Parent mode"
           title="Manage"
-          subtitle="Achievements, goals, and who's in the family."
+          subtitle="Achievements, goals, the good stuff, and who's in the family."
           pose={HERO_POSE.admin}
         />
       }
@@ -72,6 +78,7 @@ export function Admin() {
         <AchievementsSection openNew={params.get('new') !== null} onConsumeNew={() => setParams({}, { replace: true })} />
       )}
       {section === 'goals' && <GoalsSection />}
+      {section === 'good-stuff' && <GoodStuffSection />}
       {section === 'people' && <PeopleSection />}
 
       <TabBar tabs={PARENT_TABS} />
@@ -570,5 +577,265 @@ function PeopleSection() {
         </Card>
       ))}
     </div>
+  )
+}
+
+/* ---------------------------------------------------------- good stuff ---- */
+
+/**
+ * Things a parent would like the kid to have, each with a share the parent
+ * commits to covering. A list a parent types — not a catalogue, not a store.
+ */
+function GoodStuffSection() {
+  const queryClient = useQueryClient()
+  const { parent } = useSession()
+  const [editing, setEditing] = useState<SuggestedItemRow | 'new' | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<SuggestedItemRow | null>(null)
+
+  const family = useQuery({ queryKey: ['family'], queryFn: api.family })
+  const items = useQuery({ queryKey: ['goodStuff'], queryFn: api.allGoodStuff })
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['goodStuff'] })
+    queryClient.invalidateQueries({ queryKey: ['kidHome'] })
+  }
+
+  const remove = useMutation({
+    mutationFn: (id: number) => api.deleteSuggestion(id, parent!.id),
+    onSuccess: () => setConfirmDelete(null),
+    onSettled: invalidate,
+  })
+
+  return (
+    <div className="scroll-y animate-fade -mx-1 flex flex-1 flex-col gap-3 px-6 pt-4 pb-4 [&>*]:shrink-0">
+      <div className="flex items-center justify-between">
+        <Eyebrow>Things you&rsquo;d go halves on</Eyebrow>
+        {!editing && <SmallButton onClick={() => setEditing('new')}>Add something</SmallButton>}
+      </div>
+
+      {items.isPending && <Spinner />}
+
+      {editing && family.data && (
+        <SuggestionForm
+          kids={family.data.kids}
+          item={editing === 'new' ? null : editing}
+          onDone={() => {
+            setEditing(null)
+            invalidate()
+          }}
+          onCancel={() => setEditing(null)}
+        />
+      )}
+
+      {items.data?.map((item) => (
+        <Card key={item.id} className="flex shrink-0 flex-col gap-2 p-4">
+          <div className="flex items-start gap-3">
+            <ChoreIconBadge icon={item.icon} tone="leaf" size={40} />
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="display text-chestnut truncate text-[18px] leading-tight font-bold">
+                {item.name}
+              </span>
+              <span className="text-mustache/70 text-[13px] leading-tight">
+                {money(item.priceCents)} · {item.visibleToName ? `${item.visibleToName} only` : 'Everyone'}
+              </span>
+            </div>
+            <MatchBadge payer="You" matchPercent={item.matchPercent} />
+          </div>
+
+          {/* The split, stated the same way the kid will see it. */}
+          <p className="text-mustache text-[14px] font-bold">
+            {item.matchAmountCents > 0
+              ? `They pay ${money(item.kidShareCents)}. You pay ${money(item.matchAmountCents)}.`
+              : `They pay ${money(item.kidShareCents)}.`}
+          </p>
+
+          {item.note && <p className="text-mustache/70 text-[13px] italic">&ldquo;{item.note}&rdquo;</p>}
+
+          {item.adoptedBy.length > 0 && (
+            <p className="text-leaf-deep rounded-inset bg-leaf/10 px-3 py-2 text-[13px] leading-snug font-bold">
+              {item.adoptedBy.join(' and ')} {item.adoptedBy.length === 1 ? 'is' : 'are'} saving for this now.
+              Price and match are locked so their target doesn&rsquo;t move.
+            </p>
+          )}
+
+          {confirmDelete?.id === item.id ? (
+            <div className="border-line-cream flex flex-col gap-2 border-t pt-2">
+              <p className="text-mustache text-[13px] leading-snug">
+                {item.adoptedBy.length > 0
+                  ? `Take it off the list? ${item.adoptedBy.join(' and ')} will keep the goal and the match you promised.`
+                  : 'Take it off the list?'}
+              </p>
+              <div className="flex items-center justify-between">
+                <SmallButton variant="quiet" onClick={() => setConfirmDelete(null)}>
+                  Keep it
+                </SmallButton>
+                <DangerLink disabled={remove.isPending} onClick={() => remove.mutate(item.id)}>
+                  Remove
+                </DangerLink>
+              </div>
+            </div>
+          ) : (
+            <div className="border-line-cream flex items-center justify-between border-t pt-2">
+              <SmallButton variant="quiet" onClick={() => setEditing(item)}>
+                Edit
+              </SmallButton>
+              <DangerLink onClick={() => setConfirmDelete(item)}>Remove</DangerLink>
+            </div>
+          )}
+        </Card>
+      ))}
+
+      {items.data?.length === 0 && !editing && (
+        <ScreenMessage>
+          Nothing here yet. Add something you&rsquo;d be glad to see them save for.
+        </ScreenMessage>
+      )}
+    </div>
+  )
+}
+
+function SuggestionForm({
+  kids,
+  item,
+  onDone,
+  onCancel,
+}: {
+  kids: KidSummary[]
+  item: SuggestedItemRow | null
+  onDone: () => void
+  onCancel: () => void
+}) {
+  const { parent } = useSession()
+  const [name, setName] = useState(item?.name ?? '')
+  const [price, setPrice] = useState(item ? (item.priceCents / 100).toFixed(2) : '')
+  const [matchPercent, setMatchPercent] = useState(item?.matchPercent ?? 50)
+  const [icon, setIcon] = useState<string>(item?.icon ?? 'sparkle')
+  const [note, setNote] = useState(item?.note ?? '')
+  const [visibleTo, setVisibleTo] = useState<number | null>(item?.visibleToUserId ?? null)
+  const [error, setError] = useState<string | null>(null)
+
+  const priceCents = Math.round(Number(price || 0) * 100)
+  const { kidShareCents, matchAmountCents } = splitMatch(priceCents, matchPercent)
+  const locked = (item?.adoptedBy.length ?? 0) > 0
+  const forKid = visibleTo ? kids.find((k) => k.id === visibleTo)?.name : null
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const input: SuggestedItemInput = {
+        parentId: parent!.id,
+        name,
+        priceCents,
+        matchPercent,
+        icon,
+        note: note.trim() || null,
+        visibleToUserId: visibleTo,
+      }
+      await (item ? api.updateSuggestion(item.id, input) : api.createSuggestion(input))
+    },
+    onError: (err: Error) => setError(err.message),
+    onSuccess: onDone,
+  })
+
+  return (
+    <Card className="animate-fade-up flex flex-col gap-4 p-5">
+      <Eyebrow>{item ? 'Edit' : 'Add something'}</Eyebrow>
+
+      <Field label="What is it?">
+        <TextField autoFocus value={name} onChange={setName} placeholder="Chemistry set" />
+      </Field>
+
+      <Field label="What does it cost?">
+        <input
+          value={price}
+          inputMode="decimal"
+          disabled={locked}
+          onChange={(e) => setPrice(e.target.value.replace(/[^0-9.]/g, ''))}
+          placeholder="40.00"
+          className={cx(FIELD_CLASS, locked && 'opacity-55')}
+        />
+      </Field>
+
+      <Field label="How much do you cover?">
+        <div className="flex flex-wrap gap-2">
+          {MATCH_STEPS.map((step) => (
+            <ChoiceChip
+              key={step}
+              selected={matchPercent === step}
+              onClick={() => !locked && setMatchPercent(step)}
+            >
+              {step === 0 ? 'None' : `${step}%`}
+            </ChoiceChip>
+          ))}
+        </div>
+      </Field>
+
+      {/*
+        The whole feature explained, at the moment the parent is deciding it.
+        Never buried in a tooltip.
+      */}
+      {priceCents > 0 && (
+        <p className="bg-leaf/10 rounded-inset text-chestnut px-4 py-3 text-center text-[15px] font-bold">
+          {matchAmountCents > 0
+            ? `${forKid ?? 'They'} pay${forKid ? 's' : ''} ${money(kidShareCents)}. You pay ${money(matchAmountCents)}.`
+            : `${forKid ?? 'They'} pay${forKid ? 's' : ''} ${money(kidShareCents)}.`}
+        </p>
+      )}
+
+      {locked && (
+        <p className="text-mustache/70 text-[13px] leading-snug">
+          {item?.adoptedBy.join(' and ')} {item && item.adoptedBy.length === 1 ? 'is' : 'are'} already
+          saving for this, so the price and match are locked. Add a new one instead.
+        </p>
+      )}
+
+      <Field label="Pick a picture">
+        <div className="scroll-y flex gap-2 overflow-x-auto pb-1">
+          {CHORE_ICON_KEYS.map((key) => (
+            <button
+              key={key}
+              type="button"
+              title={CHORE_ICONS[key].label}
+              aria-label={CHORE_ICONS[key].label}
+              aria-pressed={icon === key}
+              onClick={() => setIcon(key)}
+              className={cx(
+                'flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
+                icon === key
+                  ? 'border-leaf bg-leaf/15 text-leaf-deep'
+                  : 'border-line-cream text-mustache/60 bg-white',
+              )}
+            >
+              <ChoreIcon icon={key} size={20} />
+            </button>
+          ))}
+        </div>
+      </Field>
+
+      <Field label="Say something about it (optional)">
+        <TextField value={note} onChange={setNote} placeholder="You've been asking about this for months." />
+      </Field>
+
+      <Field label="Who sees it?">
+        <div className="flex flex-wrap gap-2">
+          <ChoiceChip selected={visibleTo === null} onClick={() => setVisibleTo(null)}>
+            Everyone
+          </ChoiceChip>
+          {kids.map((kid) => (
+            <ChoiceChip key={kid.id} selected={visibleTo === kid.id} onClick={() => setVisibleTo(kid.id)}>
+              {kid.name}
+            </ChoiceChip>
+          ))}
+        </div>
+      </Field>
+
+      {error && <p className="text-coral text-[14px] font-bold">{error}</p>}
+
+      <Button disabled={save.isPending} onClick={() => save.mutate()}>
+        {item ? 'Save' : 'Add it'}
+      </Button>
+      <SmallButton variant="quiet" onClick={onCancel}>
+        Cancel
+      </SmallButton>
+    </Card>
   )
 }

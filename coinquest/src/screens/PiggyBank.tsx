@@ -40,13 +40,18 @@ export function PiggyBank() {
   const data = home.data
 
   const availableCents = (data?.balanceCents ?? 0) - (data?.heldCents ?? 0)
+  // Money already earned but not yet approved — on its way in, not here yet.
+  const pendingInCents = data?.requests.reduce((s, r) => s + Math.max(0, r.amountCents), 0) ?? 0
 
   return (
     <Screen
+      tone="green"
+      tint={data?.kid.avatarColor}
       hero={
         <Hero
-          eyebrow="My Stash"
-          title="My Stash"
+          seamless
+          eyebrow="Stash"
+          title="Stash"
           amountCents={data?.balanceCents ?? 0}
           subtitle={
             data && data.heldCents > 0
@@ -55,11 +60,17 @@ export function PiggyBank() {
           }
           pose={HERO_POSE.piggyBank}
           milestone={data?.savings}
-        />
+        >
+          {pendingInCents > 0 && (
+            <span className="rounded-full bg-white/15 px-3 py-1 text-[12px] font-bold text-white">
+              Pending · +{money(pendingInCents)} once {data?.approverName} approves
+            </span>
+          )}
+        </Hero>
       }
     >
-      {home.isPending && <Spinner />}
-      {home.isError && <ScreenMessage>{(home.error as Error).message}</ScreenMessage>}
+      {home.isPending && <Spinner onGreen />}
+      {home.isError && <ScreenMessage onGreen>{(home.error as Error).message}</ScreenMessage>}
 
       {data && mode === 'idle' && (
         <IdleView
@@ -113,26 +124,27 @@ function IdleView({
   return (
     <div className="scroll-y animate-fade -mx-1 flex flex-1 flex-col gap-5 px-6 pt-5 pb-4 [&>*]:shrink-0">
       {home.savings.nudge && (
-        <div className="bg-gold/20 rounded-card text-chestnut px-4 py-3 text-center text-[15px] font-bold">
+        <div className="bg-gold rounded-card text-mustache px-4 py-3 text-center text-[15px] font-bold">
           {home.savings.nudge}
         </div>
       )}
 
       {/*
-        Money in and money out are the same size: taking money out is the point
-        of saving, so it gets equal footprint. Only one is the filled primary.
+        The page is one colour top to bottom, so these two sit inside the
+        header rather than under it — the amount above, the ways it moves right
+        below. Equal size on purpose: taking money out is the point of saving.
       */}
       <div className="grid grid-cols-2 gap-3">
         <button
           type="button"
           onClick={() => onMode('earn')}
-          className="pressable bg-leaf rounded-card hover:bg-leaf-deep flex min-h-[132px] flex-col items-start gap-2 p-4 text-left shadow-[var(--shadow-button)]"
+          className="pressable bg-surface rounded-card flex min-h-[132px] flex-col items-start gap-2 p-4 text-left shadow-[var(--shadow-button)]"
         >
-          <span className="text-leaf display flex h-11 w-11 items-center justify-center rounded-full bg-white text-[24px] font-extrabold">
+          <span className="bg-leaf display flex h-11 w-11 items-center justify-center rounded-full text-[24px] font-extrabold text-white">
             ＋
           </span>
-          <span className="display text-[20px] leading-tight font-extrabold text-white">Add funds</span>
-          <span className="text-[12px] leading-tight text-white/85">
+          <span className="display text-chestnut text-[20px] leading-tight font-extrabold">Add funds</span>
+          <span className="text-mustache/65 text-[12px] leading-tight">
             {open.length > 0 ? `${open.length} to do · ${money(home.remainingCents)}` : 'Nothing to do yet'}
           </span>
         </button>
@@ -141,21 +153,21 @@ function IdleView({
           type="button"
           onClick={() => onMode('spend')}
           disabled={availableCents <= 0}
-          className="pressable bg-surface rounded-card border-line-cream hover:border-coral/50 flex min-h-[132px] flex-col items-start gap-2 border-2 p-4 text-left shadow-[var(--shadow-card)] disabled:opacity-45"
+          className="pressable rounded-card flex min-h-[132px] flex-col items-start gap-2 border-2 border-white/30 bg-white/10 p-4 text-left disabled:opacity-45"
         >
-          <span className="bg-coral/15 text-coral display flex h-11 w-11 items-center justify-center rounded-full text-[24px] font-extrabold">
+          <span className="display flex h-11 w-11 items-center justify-center rounded-full bg-white/20 text-[24px] font-extrabold text-white">
             ↑
           </span>
-          <span className="display text-chestnut text-[20px] leading-tight font-extrabold">Take out</span>
-          <span className="text-mustache/65 text-[12px] leading-tight">
+          <span className="display text-[20px] leading-tight font-extrabold text-white">Take out</span>
+          <span className="text-[12px] leading-tight text-white/80">
             {availableCents > 0 ? `${money(availableCents)} ready` : 'Nothing to spend yet'}
           </span>
         </button>
       </div>
 
-      <OutstandingRequests requests={home.requests} />
+      <OutstandingRequests requests={home.requests} onGreen />
 
-      <SmallButton variant="quiet" onClick={() => onHistory()}>
+      <SmallButton variant="quiet" className="border-white/30 text-white" onClick={() => onHistory()}>
         See every dollar
       </SmallButton>
     </div>
@@ -179,10 +191,10 @@ function EarnView({
   return (
     <>
       <div className="scroll-y animate-fade -mx-1 flex flex-1 flex-col gap-2.5 px-6 pt-5 pb-3 [&>*]:shrink-0">
-        <Eyebrow>Pick one thing to do</Eyebrow>
+        <Eyebrow onGreen>Pick one thing to do</Eyebrow>
 
         {tasks.length === 0 && (
-          <ScreenMessage>Nothing left on your list — come back tomorrow.</ScreenMessage>
+          <ScreenMessage onGreen>Nothing left on your list — come back tomorrow.</ScreenMessage>
         )}
 
         {/* Tapping opens the full-screen confirm — criteria first, then Start. */}
@@ -198,7 +210,7 @@ function EarnView({
       </div>
 
       <div className="flex shrink-0 flex-col gap-2 px-6 pb-3">
-        <SmallButton variant="quiet" onClick={onCancel}>
+        <SmallButton variant="quiet" className="border-white/30 text-white" onClick={onCancel}>
           Cancel
         </SmallButton>
       </div>
@@ -243,9 +255,9 @@ function SpendView({
     <>
       <div className="scroll-y animate-fade -mx-1 flex flex-1 flex-col gap-5 px-6 pt-5 pb-3 [&>*]:shrink-0">
         <div className="flex flex-col items-center gap-3">
-          <Eyebrow>How much?</Eyebrow>
+          <Eyebrow onGreen>How much?</Eyebrow>
           <label className="relative block cursor-text">
-            <Money cents={cents} size={58} tone="spend" sign={MINUS} />
+            <Money cents={cents} size={58} tone="onGreen" sign={MINUS} />
             <input
               inputMode="decimal"
               aria-label="Amount to take out"
@@ -275,7 +287,7 @@ function SpendView({
         </div>
 
         <div className="flex flex-col gap-2.5">
-          <Eyebrow>What&rsquo;s it for?</Eyebrow>
+          <Eyebrow onGreen>What&rsquo;s it for?</Eyebrow>
           <div className="flex flex-wrap gap-2">
             {CATEGORIES.map((c) => (
               <ChoiceChip key={c} selected={category === c} onClick={() => setCategory(c)}>
@@ -292,17 +304,21 @@ function SpendView({
           </WarningBanner>
         )}
 
-        {error && <p className="text-coral text-[14px] font-bold">{error}</p>}
+        {error && <p className="text-[14px] font-bold text-white">{error}</p>}
       </div>
 
       <div className="flex shrink-0 flex-col gap-2 px-6 pb-3">
-        <Button disabled={!valid || request.isPending} onClick={() => request.mutate()}>
+        <Button
+          variant="onGreen"
+          disabled={!valid || request.isPending}
+          onClick={() => request.mutate()}
+        >
           {cents > availableCents && cents > 0 ? `You have ${money(availableCents)}` : `Ask for ${money(cents)}`}
         </Button>
-        <p className="text-mustache/70 text-center text-[12px]">
+        <p className="text-center text-[12px] text-white/80">
           A parent hands over the cash and confirms.
         </p>
-        <SmallButton variant="quiet" onClick={onCancel}>
+        <SmallButton variant="quiet" className="border-white/30 text-white" onClick={onCancel}>
           Cancel
         </SmallButton>
       </div>

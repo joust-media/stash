@@ -209,7 +209,9 @@
  * own background, which sits in the same (post-utilities) layer.
  */
 .device__screen--green {
-  background: var(--leaf-green);
+  /* Personalised: each kid's screens wear their profile colour. Falls back to
+     Leaf Green wherever no tint is set — every parent surface, the welcome. */
+  background: var(--screen-tint, var(--leaf-green));
 }
 
 .device__statusbar {

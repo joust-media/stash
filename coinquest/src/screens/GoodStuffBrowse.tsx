@@ -38,6 +38,7 @@ export function GoodStuffBrowse() {
 
   return (
     <Screen
+      tint={home.data?.kid.avatarColor}
       hero={
         <Hero
           eyebrow="From your parents"

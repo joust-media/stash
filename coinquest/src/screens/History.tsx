@@ -16,9 +16,12 @@ export function History() {
     queryKey: ['ledger', kidId, filter],
     queryFn: () => api.ledger(kidId, filter),
   })
+  // Only for the band colour — usually already cached from Home.
+  const home = useQuery({ queryKey: ['kidHome', kidId], queryFn: () => api.kidHome(kidId) })
 
   return (
     <Screen
+      tint={home.data?.kid.avatarColor}
       hero={
         <Hero
           eyebrow="Every dollar"

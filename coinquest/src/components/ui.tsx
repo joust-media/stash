@@ -36,18 +36,42 @@ export function StatusBar({ onGreen }: { onGreen?: boolean }) {
  * The phone frame. `tone="green"` paints the whole screen Leaf Green with the
  * locked forest layer behind it — used for the welcome and celebration takeovers.
  */
+/**
+ * A profile colour is an identity, not a guaranteed surface: the picker offers
+ * gold, and gold behind white text is unreadable. Darken anything too bright
+ * until it can carry white, so "my colour is gold" becomes a deep ochre page
+ * rather than a broken one.
+ */
+export function pageTint(color: string | null | undefined): string | undefined {
+  if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) return undefined
+  let r = parseInt(color.slice(1, 3), 16)
+  let g = parseInt(color.slice(3, 5), 16)
+  let b = parseInt(color.slice(5, 7), 16)
+  let guard = 0
+  while ((0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 > 0.45 && guard++ < 8) {
+    r = Math.round(r * 0.85)
+    g = Math.round(g * 0.85)
+    b = Math.round(b * 0.85)
+  }
+  return `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`
+}
+
 export function Screen({
   children,
   tone = 'cream',
   hero,
+  tint,
 }: {
   children: ReactNode
   tone?: 'cream' | 'green'
   /** A <Hero>, which paints its own Leaf Green band and status bar. */
   hero?: ReactNode
+  /** The kid's profile colour — recolours the hero band and any green surface. */
+  tint?: string | null
 }) {
+  const safe = pageTint(tint)
   return (
-    <div className="device">
+    <div className="device" style={safe ? ({ '--screen-tint': safe } as React.CSSProperties) : undefined}>
       <div className={cx('device__screen', tone === 'green' && 'device__screen--green')}>
         {tone === 'green' && <ForestShapes />}
         {hero ?? <StatusBar onGreen={tone === 'green'} />}
@@ -416,9 +440,9 @@ export interface Tab {
  */
 export const KID_TABS = (kidId: number): Tab[] => [
   { to: `/kid/${kidId}`, label: 'Home' },
-  { to: `/kid/${kidId}/tasks`, label: 'Achievements' },
+  { to: `/kid/${kidId}/tasks`, label: 'Earn' },
   { to: `/kid/${kidId}/goals`, label: 'Goals' },
-  { to: `/kid/${kidId}/bank`, label: 'My Stash' },
+  { to: `/kid/${kidId}/bank`, label: 'Stash' },
 ]
 
 export const PARENT_TABS: Tab[] = [

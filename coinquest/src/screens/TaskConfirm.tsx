@@ -29,7 +29,7 @@ export function TaskConfirm() {
   if (data && (!task || task.status !== null)) return <Navigate to={`/kid/${kidId}`} replace />
 
   return (
-    <Screen tone="green">
+    <Screen tone="green" tint={data?.kid.avatarColor}>
       {isPending && <Spinner onGreen />}
 
       {data && task && (
@@ -38,7 +38,10 @@ export function TaskConfirm() {
 
           <div className="flex flex-col items-center gap-2">
             <Chip onGreen>{task.scheduleLabel}</Chip>
-            <h1 className="display text-[30px] leading-tight font-extrabold text-white">{task.title}</h1>
+            {/* It reads as the question it is: "Load the dishwasher?" */}
+            <h1 className="display text-[30px] leading-tight font-extrabold text-white">
+              {task.title.replace(/[.?!]$/, '')}?
+            </h1>
             <span className="display text-[26px] font-extrabold text-white">
               +{money(task.rewardCents)}
             </span>

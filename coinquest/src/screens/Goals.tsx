@@ -89,6 +89,7 @@ export function Goals() {
 
   return (
     <Screen
+      tint={home.data?.kid.avatarColor}
       hero={
         <Hero
           eyebrow="Saving for"

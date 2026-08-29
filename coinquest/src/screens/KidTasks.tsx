@@ -26,6 +26,7 @@ export function KidTasks() {
 
   return (
     <Screen
+      tint={data?.kid.avatarColor}
       hero={
         <Hero
           eyebrow="Working towards"

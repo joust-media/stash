@@ -67,7 +67,10 @@ export function ForestBackdrop({
   style?: CSSProperties
 }) {
   return (
-    <div className={`bg-leaf relative overflow-hidden ${className}`} style={style}>
+    <div
+      className={`relative overflow-hidden ${className}`}
+      style={{ background: 'var(--screen-tint, var(--leaf-green))', ...style }}
+    >
       <ForestShapes />
       <div className="relative flex min-h-0 flex-1 flex-col">{children}</div>
     </div>

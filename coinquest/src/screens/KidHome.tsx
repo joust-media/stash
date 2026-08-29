@@ -69,6 +69,7 @@ export function KidHome() {
   return (
     <Screen
       tone="green"
+      tint={data?.kid.avatarColor}
       hero={
         <Hero
           seamless

@@ -4,7 +4,6 @@ import { useNavigate, useParams } from 'react-router-dom'
 import type { KidHome, TaskRow } from '../../shared/types'
 import { api } from '../lib/api'
 import { MINUS, money } from '../lib/format'
-import { useStartTask } from '../components/TaskList'
 import { Hero } from '../components/Hero'
 import { HERO_POSE } from '../components/Mascot'
 import { Money } from '../components/Money'
@@ -27,9 +26,9 @@ const CATEGORIES = ['Going out', 'Food', 'Gift', 'Other']
 type Mode = 'idle' | 'earn' | 'spend'
 
 /**
- * The Piggy Bank. Money in and money out both start here, and both need a
- * parent: "Add funds" picks something to do and requests it, "Take money out"
- * asks for cash. Neither moves a cent on its own.
+ * My Stash. Money in and money out both start here, and both need a parent:
+ * "Add funds" picks something to do and requests it, "Take out" asks for cash.
+ * Neither moves a cent on its own.
  */
 export function PiggyBank() {
   const kidId = Number(useParams().kidId)
@@ -46,8 +45,8 @@ export function PiggyBank() {
     <Screen
       hero={
         <Hero
-          eyebrow="Piggy bank"
-          title="Piggy bank"
+          eyebrow="My Stash"
+          title="My Stash"
           amountCents={data?.balanceCents ?? 0}
           subtitle={
             data && data.heldCents > 0
@@ -175,8 +174,7 @@ function EarnView({
   tasks: TaskRow[]
   onCancel: () => void
 }) {
-  const [picked, setPicked] = useState<TaskRow | null>(null)
-  const start = useStartTask(kidId)
+  const navigate = useNavigate()
 
   return (
     <>
@@ -187,22 +185,19 @@ function EarnView({
           <ScreenMessage>Nothing left on your list — come back tomorrow.</ScreenMessage>
         )}
 
+        {/* Tapping opens the full-screen confirm — criteria first, then Start. */}
         <TaskGrid>
           {tasks.map((task) => (
             <TaskTile
               key={task.choreId}
               task={task}
-              selected={picked?.choreId === task.choreId}
-              onClick={setPicked}
+              onClick={(t) => navigate(`/kid/${kidId}/task/${t.choreId}`)}
             />
           ))}
         </TaskGrid>
       </div>
 
       <div className="flex shrink-0 flex-col gap-2 px-6 pb-3">
-        <Button disabled={!picked || start.isPending} onClick={() => picked && start.mutate(picked)}>
-          {picked ? `Start · earn ${money(picked.rewardCents)}` : 'Pick one to start'}
-        </Button>
         <SmallButton variant="quiet" onClick={onCancel}>
           Cancel
         </SmallButton>

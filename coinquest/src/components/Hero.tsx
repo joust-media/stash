@@ -38,6 +38,7 @@ export function Hero({
   back,
   action,
   onMilestoneClick,
+  seamless,
 }: {
   eyebrow?: ReactNode
   title: ReactNode
@@ -55,6 +56,8 @@ export function Hero({
   action?: ReactNode
   /** Makes the progress row tappable — used to reach the goals screen. */
   onMilestoneClick?: () => void
+  /** Drops the rounded bottom and shadow so the band melts into a green page. */
+  seamless?: boolean
 }) {
   const navigate = useNavigate()
   const spec = POSES[pose] ?? POSES['coin-toss']
@@ -62,7 +65,9 @@ export function Hero({
   const showMilestoneLabel = milestone ? milestone.label !== title : false
 
   return (
-    <ForestBackdrop className="shrink-0 rounded-b-[32px] shadow-[var(--shadow-card)]">
+    <ForestBackdrop
+      className={cx('shrink-0', !seamless && 'rounded-b-[32px] shadow-[var(--shadow-card)]')}
+    >
       <div className="relative z-20">
         <StatusBar onGreen />
       </div>

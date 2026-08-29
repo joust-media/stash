@@ -22,14 +22,26 @@ async function requireGoalActor(actorId: unknown, kidId: number) {
   return actor
 }
 
-function validate(body: { title?: string; targetCents?: number }) {
+function validate(body: { title?: string; targetCents?: number; image?: string | null }) {
   const title = body.title?.trim()
   const target = Math.round(Number(body.targetCents))
   if (!title) throw new HttpError(400, 'What are you saving for?')
   if (title.length > 120) throw new HttpError(400, 'That name is a bit long')
   if (!Number.isFinite(target) || target <= 0) throw new HttpError(400, 'How much does it cost?')
   if (target > 100_000_00) throw new HttpError(400, 'That target is too big')
-  return { title, target }
+
+  // A photo of the thing, resized by the client before upload. The cap is on
+  // the stored string — roughly 300KB of image — so one goal cannot bloat
+  // every kidHome payload it rides along in.
+  let image: string | null = null
+  if (body.image) {
+    if (!/^data:image\/(jpeg|png|webp);base64,/.test(body.image)) {
+      throw new HttpError(400, 'That picture did not come through right — try another')
+    }
+    if (body.image.length > 400_000) throw new HttpError(400, 'That picture is too big')
+    image = body.image
+  }
+  return { title, target, image }
 }
 
 /** GET /api/kids/:kidId/goals — one kid's goals, the active one first. */
@@ -70,6 +82,8 @@ interface GoalBody {
   title: string
   targetCents: number
   icon?: string | null
+  /** A photo of the thing, as a client-resized data URL. */
+  image?: string | null
   /** Make this the tracked goal. The first goal always is. */
   active?: boolean
 }
@@ -79,7 +93,7 @@ goalRoutes.post('/', async (c) => {
   const body = await c.req.json<GoalBody & { parentId?: number }>()
   const kid = await requireKid(Number(body.kidId))
   await requireGoalActor(body.actorId ?? body.parentId, kid.id)
-  const { title, target } = validate(body)
+  const { title, target, image } = validate(body)
 
   const id = await tx(async (conn) => {
     const [existing] = await conn.query('SELECT COUNT(*) AS n FROM goals WHERE kid_id = ?', [kid.id])
@@ -89,8 +103,8 @@ goalRoutes.post('/', async (c) => {
     if (makeActive) await conn.query('UPDATE goals SET active = 0 WHERE kid_id = ?', [kid.id])
 
     const [result] = await conn.query(
-      'INSERT INTO goals (kid_id, title, target_cents, icon, active) VALUES (?, ?, ?, ?, ?)',
-      [kid.id, title, target, body.icon || null, makeActive ? 1 : 0],
+      'INSERT INTO goals (kid_id, title, target_cents, icon, image, active) VALUES (?, ?, ?, ?, ?, ?)',
+      [kid.id, title, target, body.icon || null, image, makeActive ? 1 : 0],
     )
     return Number((result as { insertId: number }).insertId)
   })
@@ -105,16 +119,17 @@ goalRoutes.put('/:id', async (c) => {
   const existing = await one<{ kid_id: number }>('SELECT kid_id FROM goals WHERE id = ?', [id])
   if (!existing) throw new HttpError(404, 'That goal does not exist')
   await requireGoalActor(body.actorId ?? body.parentId, Number(existing.kid_id))
-  const { title, target } = validate(body)
+  const { title, target, image } = validate(body)
 
   await tx(async (conn) => {
     if (body.active) {
       await conn.query('UPDATE goals SET active = 0 WHERE kid_id = ?', [existing.kid_id])
     }
+    // `image` only moves when the client sent one; omitting it keeps the photo.
     await conn.query(
-      `UPDATE goals SET title = ?, target_cents = ?, icon = ?${body.active ? ', active = 1' : ''}
+      `UPDATE goals SET title = ?, target_cents = ?, icon = ?${image ? ', image = ?' : ''}${body.active ? ', active = 1' : ''}
         WHERE id = ?`,
-      [title, target, body.icon || null, id],
+      image ? [title, target, body.icon || null, image, id] : [title, target, body.icon || null, id],
     )
   })
   return c.json({ ok: true })

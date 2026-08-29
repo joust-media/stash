@@ -32,7 +32,10 @@ const USER_COLUMNS = `u.id AS u_id, u.family_id, u.name, u.role, u.age, u.avatar
 
 /** GET /api/approvals — achievements waiting to pay out, plus cash requests. */
 approvalRoutes.get('/', async (c) => {
-  const [completions, withdrawals] = await Promise.all([
+  const dayStart = new Date()
+  dayStart.setHours(0, 0, 0, 0)
+
+  const [completions, withdrawals, nudges] = await Promise.all([
     all(
       `SELECT tc.id, tc.completed_at, ch.title, ch.reward_cents, ${USER_COLUMNS}
          FROM task_completions tc
@@ -49,6 +52,14 @@ approvalRoutes.get('/', async (c) => {
          LEFT JOIN goals g ON g.id = w.goal_id
         WHERE w.status = 'pending'
         ORDER BY w.requested_at DESC`,
+    ),
+    // Stash's visits today — the kid sent him to nudge whoever approves.
+    all(
+      `SELECT u.name, r.created_at FROM reminders r
+         JOIN users u ON u.id = r.kid_id
+        WHERE r.created_at >= ?
+        ORDER BY r.created_at DESC`,
+      [dayStart],
     ),
   ])
 
@@ -79,6 +90,7 @@ approvalRoutes.get('/', async (c) => {
 
   const payload: ApprovalsPayload = {
     items,
+    reminders: nudges.map((r) => ({ kidName: r.name as string, timeLabel: timeLabel(r.created_at) })),
     payoutCents: items.filter((i) => i.kind === 'achievement').reduce((s, i) => s + i.amountCents, 0),
     withdrawalCents: items
       .filter((i) => i.kind === 'withdrawal')

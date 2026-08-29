@@ -44,6 +44,7 @@ async function cardsFor(kidId?: number): Promise<ChoreCard[]> {
     scheduleDetail: c.schedule_detail,
     scheduleLabel: scheduleChip(c.schedule, c.schedule_detail, Boolean(c.active)),
     icon: c.icon ?? null,
+    description: (c.description as string | null) ?? null,
     active: Boolean(c.active),
     assignees: assignees
       .filter((a) => Number(a.chore_id) === Number(c.id))
@@ -65,6 +66,8 @@ interface ChoreBody {
   schedule: Schedule
   scheduleDetail?: string | null
   icon?: string | null
+  /** What finishing it means — shown to the kid before they start. */
+  description?: string | null
   kidIds: number[]
 }
 
@@ -75,19 +78,21 @@ function validate(body: Partial<ChoreBody>) {
   if (!Number.isFinite(reward) || reward <= 0) throw new HttpError(400, 'Set a reward above $0')
   if (!SCHEDULES.includes(body.schedule as Schedule)) throw new HttpError(400, 'Pick how often it repeats')
   if (!body.kidIds?.length) throw new HttpError(400, 'Assign it to at least one kid')
-  return { title, reward }
+  const description = body.description?.trim() || null
+  if (description && description.length > 240) throw new HttpError(400, 'Keep the details under 240 characters')
+  return { title, reward, description }
 }
 
 /** POST /api/chores */
 choreRoutes.post('/', async (c) => {
   const body = await c.req.json<ChoreBody>()
   const parent = await requireParent(body.parentId)
-  const { title, reward } = validate(body)
+  const { title, reward, description } = validate(body)
 
   const id = await tx(async (conn) => {
     const [result] = await conn.query(
-      `INSERT INTO chores (family_id, title, reward_cents, schedule, schedule_detail, icon, active)
-       VALUES (?, ?, ?, ?, ?, ?, 1)`,
+      `INSERT INTO chores (family_id, title, reward_cents, schedule, schedule_detail, icon, description, active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
       [
         parent.family_id,
         title,
@@ -95,6 +100,7 @@ choreRoutes.post('/', async (c) => {
         body.schedule,
         body.scheduleDetail?.trim() || null,
         body.icon || null,
+        description,
       ],
     )
     const choreId = Number((result as { insertId: number }).insertId)
@@ -114,16 +120,16 @@ choreRoutes.put('/:id', async (c) => {
   const body = await c.req.json<ChoreBody>()
   await requireParent(body.parentId)
   const id = Number(c.req.param('id'))
-  const { title, reward } = validate(body)
+  const { title, reward, description } = validate(body)
 
   const existing = await one('SELECT id FROM chores WHERE id = ?', [id])
   if (!existing) throw new HttpError(404, 'That achievement does not exist')
 
   await tx(async (conn) => {
     await conn.query(
-      `UPDATE chores SET title = ?, reward_cents = ?, schedule = ?, schedule_detail = ?, icon = ?
+      `UPDATE chores SET title = ?, reward_cents = ?, schedule = ?, schedule_detail = ?, icon = ?, description = ?
         WHERE id = ?`,
-      [title, reward, body.schedule, body.scheduleDetail?.trim() || null, body.icon || null, id],
+      [title, reward, body.schedule, body.scheduleDetail?.trim() || null, body.icon || null, description, id],
     )
     await conn.query('DELETE FROM chore_assignments WHERE chore_id = ?', [id])
     for (const kidId of body.kidIds) {

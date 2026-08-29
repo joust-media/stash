@@ -33,6 +33,7 @@ export async function wipe(): Promise<void> {
   try {
     await conn.query('SET FOREIGN_KEY_CHECKS = 0')
     for (const table of [
+      'reminders',
       'suggested_items',
       'withdrawal_requests',
       'transactions',
@@ -152,6 +153,33 @@ export async function seed(): Promise<void> {
     await goal(leo, 'Skate helmet', 3500, 'sport', false)
     await goal(zoe, 'New skateboard', 4500, 'sport', true)
     await goal(zoe, 'Camera', 15000, 'sparkle', false)
+
+    /*
+     * What finishing each task means — the criteria the kid sees full-screen
+     * before hitting Start. Written to the voice rules: second person, plain,
+     * no scolding.
+     */
+    const DESCRIPTIONS: Record<string, string> = {
+      'Take out the trash': 'Bag it, tie it, new bag in the bin, and the can out where the truck can reach it.',
+      'Empty the dishwasher': 'Everything put away where it lives — not stacked on the counter.',
+      'Make the bed': 'Sheets pulled flat, pillow at the top, blanket straightened. Ten seconds, done.',
+      'Feed the dog': 'One scoop of food, fresh water in the bowl. Check the water even if the bowl is full.',
+      'Walk the dog': 'At least 15 minutes, leash on, and bring bags.',
+      'Read for 20 minutes': 'Any book you like. Comics count. Twenty real minutes, not twenty with your phone.',
+      'Homework done': 'Every subject finished before screens. Ask for help early, not at bedtime.',
+      'Practice piano': 'Twenty minutes at the keys. Scales first, then the piece you are working on.',
+      'Mow the lawn': 'Front and back, edges included, clippings raked. Ask before mowing if the grass is wet.',
+      'Clean the bathroom': 'Sink, mirror, toilet, and the floor. Towels folded on the rail.',
+      'Tidy your room': 'Floor clear, desk clear, clothes in the basket or the drawer — not the chair.',
+      'Wash the car': 'Soap, rinse, and dry — inside windows too. Buckets away when you are done.',
+    }
+    for (const [title, description] of Object.entries(DESCRIPTIONS)) {
+      await conn.query('UPDATE chores SET description = ? WHERE family_id = ? AND title = ?', [
+        description,
+        familyId,
+        title,
+      ])
+    }
 
     /*
      * The Good Stuff — things the Riveras would go halves on. Deliberately the

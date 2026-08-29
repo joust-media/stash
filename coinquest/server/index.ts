@@ -11,6 +11,7 @@ import { goalRoutes } from './routes/goals.ts'
 import { goodStuffRoutes } from './routes/goodStuff.ts'
 import { kidRoutes } from './routes/kids.ts'
 import { moneyRoutes } from './routes/money.ts'
+import { reminderRoutes } from './routes/reminders.ts'
 import { taskRoutes } from './routes/tasks.ts'
 import { userRoutes } from './routes/users.ts'
 import { ensureSeed } from './seed.ts'
@@ -36,6 +37,7 @@ api.route('/chores', choreRoutes)
 api.route('/goals', goalRoutes)
 api.route('/good-stuff', goodStuffRoutes)
 api.route('/money', moneyRoutes)
+api.route('/reminders', reminderRoutes)
 api.route('/approvals', approvalRoutes)
 api.route('/', taskRoutes)
 

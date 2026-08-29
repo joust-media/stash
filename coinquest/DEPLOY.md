@@ -75,6 +75,59 @@ Expect `{"ok":true,"db":"mysql://…"}`. Then open the site on a phone.
 To reset the demo data at any point, run `npm run seed` against the Railway
 database — it wipes and reseeds.
 
+## 5b. Putting it on gostashgo.com
+
+The domain is registered at GoDaddy and completely empty — no MX, no TXT, no
+subdomains, just a parking page. That matters: moving its DNS breaks nothing.
+
+### Why the nameservers have to move
+
+Railway hands you a `CNAME` and a `TXT`, and its docs are explicit that
+"direct CNAME records at the root or apex level are incompatible with DNS
+standards." Providers get around that with CNAME flattening or ALIAS records —
+**GoDaddy is named among those that cannot**. So bare `gostashgo.com` cannot
+point at Railway while GoDaddy holds the DNS.
+
+Cloudflare flattens CNAMEs at the root, is free, and is Railway's own
+recommended fix.
+
+### Steps
+
+1. **Cloudflare** — sign up, *Add a site*, enter `gostashgo.com`, pick the Free
+   plan. It scans the existing records and imports the GoDaddy parking `A`
+   records. **Delete those two** — they point at a parking page.
+2. Cloudflare shows you **two nameservers**. Copy them.
+3. **GoDaddy** — Domain Portfolio → `gostashgo.com` → *Nameservers* → *Change* →
+   *I'll use my own nameservers* → paste Cloudflare's two. The domain stays
+   registered at GoDaddy; only DNS hosting moves.
+4. Wait for Cloudflare to mark the domain **Active** (minutes to a few hours).
+5. **Railway** — app service → Settings → Networking → *Custom Domain* →
+   `gostashgo.com`. It gives you a CNAME target and a TXT record.
+6. **Cloudflare → DNS** — add both:
+
+   | Type | Name | Content | Proxy |
+   | --- | --- | --- | --- |
+   | CNAME | `@` | *the target Railway shows* | **DNS only (grey cloud)** |
+   | TXT | *as Railway specifies* | *as Railway specifies* | — |
+
+   Both records are required — the domain will not verify with only the CNAME.
+
+7. Optionally add `www` as a CNAME to `gostashgo.com` so both work.
+
+### Leave the proxy off at first
+
+Set the CNAME to **DNS only** (grey cloud, not orange). Railway then issues and
+serves its own certificate, which is the simple path. Turning Cloudflare's proxy
+on later is fine, but its SSL/TLS mode must be **Full (strict)** — on the default
+Flexible setting you get an infinite redirect loop, and it is not obvious why.
+
+### Check it
+
+```bash
+dig +short gostashgo.com
+curl https://gostashgo.com/api/health
+```
+
 ## 6. What is deliberately not done yet
 
 You chose to ship the deployment first and harden after. Recording it here so

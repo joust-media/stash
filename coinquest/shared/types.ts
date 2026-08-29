@@ -39,6 +39,8 @@ export interface Goal {
   active: boolean
   /** Key into the chore icon set, so a goal can look like the thing it is. */
   icon: string | null
+  /** A photo of the actual thing, as a data URL. Beats any icon. */
+  image: string | null
   /** How much is still to save. */
   remainingCents: number
   /**
@@ -107,6 +109,8 @@ export interface TaskRow {
   scheduleLabel: string
   /** Key into the chore icon set; null falls back to a generic glyph. */
   icon: string | null
+  /** What finishing it means — the criteria the kid agrees to at Start. */
+  description: string | null
   completionId: number | null
   status: CompletionStatus | null
   /** Set once the kid hits Start. Null until then. */
@@ -168,6 +172,10 @@ export interface KidHome {
   goals: Goal[]
   /** The Good Stuff — parent suggestions this kid can see. Filtered server-side. */
   suggestions: SuggestedItem[]
+  /** Three-a-day rhythm: how many tasks were finished today. */
+  dailyGoal: { target: number; done: number }
+  /** How many times Stash can still be sent to remind a parent today. */
+  remindersLeftToday: number
 }
 
 export interface LedgerEntry {
@@ -220,6 +228,8 @@ export interface ApprovalItem {
 
 export interface ApprovalsPayload {
   items: ApprovalItem[]
+  /** Stash's visits today — kids who sent him to nudge. */
+  reminders: { kidName: string; timeLabel: string }[]
   /** Total the kids would be paid if every achievement were approved. */
   payoutCents: number
   /** Total that would leave the stashes if every request were handed over. */
@@ -234,6 +244,8 @@ export interface ChoreCard {
   scheduleDetail: string | null
   scheduleLabel: string
   icon: string | null
+  /** Criteria shown to the kid on the start screen. */
+  description: string | null
   active: boolean
   assignees: Person[]
   /** Completions recorded against this chore, ever. Blocks careless deletes. */

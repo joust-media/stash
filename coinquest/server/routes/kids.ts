@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { all, one } from '../db.ts'
 import { achievementMilestone, savingsMilestone } from '../milestones.ts'
 import { suggestionsFor } from './goodStuff.ts'
+import { REMINDERS_PER_DAY, remindersUsedToday } from './reminders.ts'
 import type {
   KidHome,
   KidRequest,
@@ -35,7 +36,7 @@ kidRoutes.get('/:id/home', async (c) => {
   const now = new Date()
 
   const rows = await all(
-    `SELECT c.id, c.title, c.reward_cents, c.schedule, c.schedule_detail, c.icon,
+    `SELECT c.id, c.title, c.reward_cents, c.schedule, c.schedule_detail, c.icon, c.description,
             tc.id AS completion_id, tc.status, tc.started_at
        FROM chores c
        JOIN chore_assignments ca ON ca.chore_id = c.id AND ca.kid_id = ?
@@ -57,6 +58,7 @@ kidRoutes.get('/:id/home', async (c) => {
       rewardCents: Number(r.reward_cents),
       scheduleLabel: scheduleLabel(r.schedule, r.schedule_detail),
       icon: r.icon ?? null,
+      description: (r.description as string | null) ?? null,
       completionId: r.completion_id === null ? null : Number(r.completion_id),
       status: r.status ?? null,
       startedAt: r.started_at ? iso(r.started_at) : null,
@@ -65,13 +67,22 @@ kidRoutes.get('/:id/home', async (c) => {
 
   const balanceCents = await balanceOf(kid.id)
 
-  const [parents, finished, held, waitingTasks, waitingCash] = await Promise.all([
+  const dayStart = new Date()
+  dayStart.setHours(0, 0, 0, 0)
+
+  const [parents, finished, doneToday, held, waitingTasks, waitingCash] = await Promise.all([
     all<UserRow>(`SELECT * FROM users WHERE family_id = ? AND role = 'parent' ORDER BY id`, [
       kid.family_id,
     ]),
     one<{ n: number }>(
       `SELECT COUNT(*) AS n FROM task_completions WHERE kid_id = ? AND status = 'approved'`,
       [kid.id],
+    ),
+    // The daily-three counter: anything finished today, waiting or paid.
+    one<{ n: number }>(
+      `SELECT COUNT(*) AS n FROM task_completions
+        WHERE kid_id = ? AND status IN ('pending','approved') AND completed_at >= ?`,
+      [kid.id, dayStart],
     ),
     one<{ n: number }>(
       `SELECT COALESCE(SUM(amount_cents), 0) AS n
@@ -131,6 +142,10 @@ kidRoutes.get('/:id/home', async (c) => {
     requests,
     // Filtered in SQL — a sibling's suggestions never reach this client.
     suggestions: await suggestionsFor(kid.id, Number(kid.family_id)),
+    // Three things a day keeps the stash growing. The target is a rhythm, not
+    // a rule — nothing is withheld for missing it.
+    dailyGoal: { target: 3, done: Number(doneToday?.n ?? 0) },
+    remindersLeftToday: Math.max(0, REMINDERS_PER_DAY - (await remindersUsedToday(kid.id))),
   }
   return c.json(payload)
 })

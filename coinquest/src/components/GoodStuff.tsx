@@ -2,8 +2,9 @@ import type { SuggestedItem } from '../../shared/types'
 import { matchLabel } from '../../shared/money'
 import { money } from '../lib/format'
 import { ChoreIconBadge } from './ChoreIcon'
+import { Mascot } from './Mascot'
 import { Money } from './Money'
-import { Eyebrow, SmallButton, cx } from './ui'
+import { Button, Card, Eyebrow, SmallButton, cx } from './ui'
 
 /*
  * The Good Stuff — things a parent would like the kid to have, each with a
@@ -56,17 +57,21 @@ export function GoodStuffCard({
   item,
   onPick,
   busy,
+  wide,
 }: {
   item: SuggestedItem
   onPick: (item: SuggestedItem) => void
   busy?: boolean
+  /** Fill a grid cell instead of the fixed row width. */
+  wide?: boolean
 }) {
   const adopted = item.adoptedGoalId !== null
 
   return (
     <div
       className={cx(
-        'rounded-card bg-surface flex w-[188px] shrink-0 flex-col gap-2.5 p-4 shadow-[var(--shadow-card)]',
+        'rounded-card bg-surface flex shrink-0 flex-col gap-2.5 p-4 shadow-[var(--shadow-card)]',
+        wide ? 'w-full' : 'w-[188px]',
         busy && 'opacity-50',
       )}
     >
@@ -107,14 +112,28 @@ export function GoodStuffRow({
   items,
   onPick,
   busyId,
+  onSeeAll,
 }: {
   items: SuggestedItem[]
   onPick: (item: SuggestedItem) => void
   busyId?: number | null
+  /** Opens the full-screen browse. */
+  onSeeAll?: () => void
 }) {
   return (
     <section className="flex flex-col gap-2.5">
-      <Eyebrow>The good stuff</Eyebrow>
+      <div className="flex items-baseline justify-between">
+        <Eyebrow>The good stuff</Eyebrow>
+        {onSeeAll && items.length > 0 && (
+          <button
+            type="button"
+            onClick={onSeeAll}
+            className="text-leaf-deep text-[13px] font-bold underline underline-offset-2"
+          >
+            See all
+          </button>
+        )}
+      </div>
 
       {items.length === 0 ? (
         <p className="border-line-cream text-mustache/70 rounded-card border-2 border-dashed px-4 py-6 text-center text-[14px]">
@@ -128,5 +147,68 @@ export function GoodStuffRow({
         </div>
       )}
     </section>
+  )
+}
+
+/**
+ * Looking at one suggestion before committing to it. Stash is in the acorn
+ * hug — the locked pose for savings goals. The split is stated in plain words;
+ * nothing is struck through and nothing is called a discount.
+ */
+export function AdoptPanel({
+  item,
+  hasActiveGoal,
+  activeTitle,
+  busy,
+  error,
+  onConfirm,
+  onCancel,
+}: {
+  item: SuggestedItem
+  hasActiveGoal: boolean
+  activeTitle: string | null
+  busy: boolean
+  error: string | null
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  return (
+    <Card className="animate-fade-up flex flex-col items-center gap-3 p-5 text-center">
+      <Mascot pose="acorn-hug" height={120} />
+
+      <div className="flex flex-col items-center gap-1">
+        <span className="display text-chestnut text-[22px] leading-tight font-extrabold">{item.name}</span>
+        <MatchBadge payer={item.addedByName} matchPercent={item.matchPercent} />
+      </div>
+
+      <div className="flex flex-col items-center gap-0.5">
+        <Money cents={item.kidShareCents} size={44} tone="leaf" />
+        <span className="text-mustache/65 text-[13px]">
+          {item.matchAmountCents > 0
+            ? `You save ${money(item.kidShareCents)}. ${item.addedByName} pays the other ${money(item.matchAmountCents)}.`
+            : `You save ${money(item.kidShareCents)}.`}
+        </span>
+      </div>
+
+      {item.note && <p className="text-mustache text-[14px] leading-snug">&ldquo;{item.note}&rdquo;</p>}
+
+      {/* Switching keeps the old goal — it is deactivated, never deleted. */}
+      {hasActiveGoal && activeTitle && (
+        <p className="text-mustache/70 text-[13px] leading-snug">
+          Stash will start tracking this one instead of {activeTitle}. You keep them both.
+        </p>
+      )}
+
+      {error && <p className="text-coral text-[14px] font-bold">{error}</p>}
+
+      <div className="flex w-full flex-col gap-2 pt-1">
+        <Button disabled={busy} onClick={onConfirm}>
+          Start saving for this
+        </Button>
+        <SmallButton variant="quiet" onClick={onCancel}>
+          Never mind
+        </SmallButton>
+      </div>
+    </Card>
   )
 }

@@ -214,6 +214,7 @@ interface GoalRowShape {
   match_payer_name?: string | null
   claim_settled?: number
   claim_pending?: number
+  image?: string | null
 }
 
 export function toGoal(row: GoalRowShape, balanceCents: number): Goal {
@@ -228,6 +229,7 @@ export function toGoal(row: GoalRowShape, balanceCents: number): Goal {
     progressPct: Math.min(100, Math.round((balanceCents / target) * 100)),
     active: Boolean(row.active),
     icon: row.icon ?? null,
+    image: row.image ?? null,
     remainingCents: Math.max(0, target - balanceCents),
     suggestedItemId: row.suggested_item_id == null ? null : Number(row.suggested_item_id),
     matchPercent: row.match_percent_locked == null ? null : Number(row.match_percent_locked),

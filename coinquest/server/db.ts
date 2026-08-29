@@ -248,6 +248,20 @@ const DDL = [
      CONSTRAINT chk_si_price CHECK (price_cents > 0),
      CONSTRAINT chk_si_match CHECK (match_percent BETWEEN 0 AND 90)
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+  /*
+   * Stash carrying a message: a kid can send him to remind a parent about
+   * whatever is waiting. Rate-limited to two a day per kid — a nudge is a
+   * nudge, not a siege — and the rows are the rate limit, so they are never
+   * deleted, just aged past.
+   */
+  `CREATE TABLE IF NOT EXISTS reminders (
+     id         INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+     kid_id     INT UNSIGNED NOT NULL,
+     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+     KEY idx_reminders_kid (kid_id, created_at),
+     CONSTRAINT fk_rem_kid FOREIGN KEY (kid_id) REFERENCES users(id) ON DELETE CASCADE
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 ]
 
 /*
@@ -281,6 +295,18 @@ const ADDED_COLUMNS: { table: string; column: string; definition: string }[] = [
   // Carries a claim from request through approval to the ledger line.
   { table: 'withdrawal_requests', column: 'goal_id', definition: 'INT UNSIGNED NULL' },
   { table: 'transactions', column: 'goal_id', definition: 'INT UNSIGNED NULL' },
+
+  // What finishing the task actually means — the criteria the kid agrees to
+  // when they hit Start, shown full-screen before the task begins.
+  { table: 'chores', column: 'description', definition: 'VARCHAR(240) NULL' },
+
+  /*
+   * A goal can carry a real photo of the thing — stored inline as a compressed
+   * data URL rather than on disk, because the deploy filesystem is ephemeral
+   * and an image that vanishes on the next release is worse than none.
+   * The client resizes before upload; the server enforces the byte cap.
+   */
+  { table: 'goals', column: 'image', definition: 'MEDIUMTEXT NULL' },
 ]
 
 /*

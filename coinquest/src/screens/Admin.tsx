@@ -254,6 +254,7 @@ function ChoreForm({
   const [reward, setReward] = useState(chore ? (chore.rewardCents / 100).toFixed(2) : '')
   const [schedule, setSchedule] = useState<Schedule>(chore?.schedule ?? 'daily')
   const [detail, setDetail] = useState(chore?.scheduleDetail ?? '')
+  const [description, setDescription] = useState(chore?.description ?? '')
   const [icon, setIcon] = useState<string>(chore?.icon ?? 'chore')
   const [kidIds, setKidIds] = useState<number[]>(chore?.assignees.map((a) => a.id) ?? [])
   const [error, setError] = useState<string | null>(null)
@@ -266,6 +267,7 @@ function ChoreForm({
         rewardCents: Math.round(Number(reward) * 100),
         schedule,
         scheduleDetail: detail || null,
+        description: description.trim() || null,
         icon,
         kidIds,
       }
@@ -281,6 +283,18 @@ function ChoreForm({
 
       <Field label="What needs doing?">
         <TextField autoFocus value={title} onChange={setTitle} placeholder="Take out the trash" />
+      </Field>
+
+      {/* Shown to the kid full-screen before they hit Start. */}
+      <Field label="What does done look like? (optional)">
+        <textarea
+          value={description}
+          maxLength={240}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Bag it, tie it, new bag in, can out to the curb."
+          rows={2}
+          className={cx(FIELD_CLASS, 'min-h-[72px] resize-none py-3 leading-snug')}
+        />
       </Field>
 
       <div className="grid grid-cols-2 gap-3">

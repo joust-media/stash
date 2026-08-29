@@ -129,7 +129,7 @@ export function TaskTile({
  * Everything the kid is waiting on a parent for — money in and money out in the
  * same list, because a withdrawal matters as much as an earning.
  */
-export function OutstandingRequests({ requests }: { requests: KidRequest[] }) {
+export function OutstandingRequests({ requests, onGreen }: { requests: KidRequest[]; onGreen?: boolean }) {
   if (requests.length === 0) return null
 
   const incoming = requests.filter((r) => r.amountCents > 0).reduce((s, r) => s + r.amountCents, 0)
@@ -138,8 +138,8 @@ export function OutstandingRequests({ requests }: { requests: KidRequest[] }) {
   return (
     <section className="flex flex-col gap-2.5">
       <div className="flex items-baseline justify-between">
-        <Eyebrow>Waiting on a parent</Eyebrow>
-        <span className="text-mustache/70 text-[12px] font-bold">
+        <Eyebrow onGreen={onGreen}>Waiting on a parent</Eyebrow>
+        <span className={cx('text-[12px] font-bold', onGreen ? 'text-white/80' : 'text-mustache/70')}>
           {[incoming > 0 && `${money(incoming)} in`, outgoing > 0 && `${money(outgoing)} out`]
             .filter(Boolean)
             .join(' · ')}

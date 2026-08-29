@@ -410,15 +410,15 @@ export interface Tab {
 }
 
 /*
- * Nav labels are ALL-CAPS Nunito Bold, per the brand guide's
- * HOME · ACHIEVEMENTS · GOALS · PIGGY BANK. The source defines no icon set and
- * says to prefer text labels, so the bar is text only.
+ * Nav labels are ALL-CAPS Nunito Bold, text only — the brand guide defines no
+ * icon set and says to prefer labels. The money tab is the kid's own stash,
+ * so it carries the product's word for it.
  */
 export const KID_TABS = (kidId: number): Tab[] => [
   { to: `/kid/${kidId}`, label: 'Home' },
   { to: `/kid/${kidId}/tasks`, label: 'Achievements' },
   { to: `/kid/${kidId}/goals`, label: 'Goals' },
-  { to: `/kid/${kidId}/bank`, label: 'Piggy bank' },
+  { to: `/kid/${kidId}/bank`, label: 'My Stash' },
 ]
 
 export const PARENT_TABS: Tab[] = [

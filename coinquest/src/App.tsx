@@ -3,6 +3,8 @@ import { useSession } from './lib/session'
 import { KidPicker } from './screens/KidPicker'
 import { KidHome } from './screens/KidHome'
 import { KidTasks } from './screens/KidTasks'
+import { TaskConfirm } from './screens/TaskConfirm'
+import { GoodStuffBrowse } from './screens/GoodStuffBrowse'
 import { Celebration } from './screens/Celebration'
 import { PiggyBank } from './screens/PiggyBank'
 import { History } from './screens/History'
@@ -29,6 +31,8 @@ export function App() {
 
       <Route path="/kid/:kidId" element={<KidHome />} />
       <Route path="/kid/:kidId/tasks" element={<KidTasks />} />
+      <Route path="/kid/:kidId/task/:choreId" element={<TaskConfirm />} />
+      <Route path="/kid/:kidId/stuff" element={<GoodStuffBrowse />} />
       <Route path="/kid/:kidId/bank" element={<PiggyBank />} />
       <Route path="/kid/:kidId/goals" element={<Goals />} />
       <Route path="/kid/:kidId/history" element={<History />} />

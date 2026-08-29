@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { money } from '../lib/format'
-import { useCancelTask, useEndTask, useStartTask } from '../components/TaskList'
+import { useCancelTask, useEndTask } from '../components/TaskList'
 import { TaskGrid, TaskTile } from '../components/TaskTile'
 import { Hero } from '../components/Hero'
 import { HERO_POSE } from '../components/Mascot'
@@ -11,11 +11,11 @@ import { Eyebrow, KID_TABS, Screen, ScreenMessage, Spinner, TabBar } from '../co
 /** Achievements — one rung at a time, with everything that counts towards it. */
 export function KidTasks() {
   const kidId = Number(useParams().kidId)
+  const navigate = useNavigate()
   const { data, isPending, isError, error } = useQuery({
     queryKey: ['kidHome', kidId],
     queryFn: () => api.kidHome(kidId),
   })
-  const start = useStartTask(kidId)
   const end = useEndTask(kidId)
   const cancel = useCancelTask(kidId)
 
@@ -76,7 +76,7 @@ export function KidTasks() {
                   <TaskTile
                     key={task.choreId}
                     task={task}
-                    onClick={start.mutate}
+                    onClick={(t) => navigate(`/kid/${kidId}/task/${t.choreId}`)}
                     onEnd={end.mutate}
                     onCancel={cancel.mutate}
                     busy={end.isPending && end.variables?.choreId === task.choreId}

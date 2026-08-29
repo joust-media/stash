@@ -62,6 +62,8 @@ export interface GoalInput {
   title: string
   targetCents: number
   icon?: string | null
+  /** A photo of the thing, client-resized to a small data URL. */
+  image?: string | null
   active?: boolean
 }
 
@@ -80,6 +82,7 @@ export interface ChoreInput {
   parentId: number
   title: string
   rewardCents: number
+  description?: string | null
   schedule: Schedule
   scheduleDetail?: string | null
   icon?: string | null
@@ -140,6 +143,8 @@ export const api = {
   deleteGoal: (id: number, actorId: number) => send<{ ok: true }>('DELETE', `/goals/${id}`, { actorId }),
 
   goodStuff: (kidId: number) => request<SuggestedItem[]>(`/good-stuff?kidId=${kidId}`),
+  sendReminder: (kidId: number) =>
+    send<{ remainingToday: number }>('POST', '/reminders', { kidId }),
   allGoodStuff: () => request<SuggestedItemRow[]>('/good-stuff/all'),
   createSuggestion: (input: SuggestedItemInput) => send<{ id: number }>('POST', '/good-stuff', input),
   updateSuggestion: (id: number, input: SuggestedItemInput) =>

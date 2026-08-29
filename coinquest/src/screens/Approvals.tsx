@@ -5,6 +5,7 @@ import { useSession } from '../lib/session'
 import { MINUS, money } from '../lib/format'
 import { Hero } from '../components/Hero'
 import { HERO_POSE } from '../components/Mascot'
+import { Mascot } from '../components/Mascot'
 import { Money, RewardBadge } from '../components/Money'
 import {
   Avatar,
@@ -83,6 +84,23 @@ export function Approvals() {
 
       {data && count > 0 && (
         <div className="scroll-y animate-fade -mx-1 flex flex-1 flex-col gap-3 px-6 pt-4 pb-4 [&>*]:shrink-0">
+          {/* Stash has been by: the kids sent him to nudge. Twice a day, max. */}
+          {data.reminders.length > 0 && (
+            <div className="bg-gold/20 rounded-card flex items-center gap-3 px-4 py-3">
+              <Mascot pose="coin-toss-alt" height={64} />
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="display text-chestnut text-[15px] leading-tight font-bold">
+                  Stash stopped by
+                </span>
+                {data.reminders.slice(0, 3).map((r, i) => (
+                  <span key={i} className="text-mustache text-[13px] leading-snug">
+                    {r.kidName}&rsquo;s waiting on you · {r.timeLabel}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {data.items.map((item) => {
             const isWithdrawal = item.kind === 'withdrawal'
             return (

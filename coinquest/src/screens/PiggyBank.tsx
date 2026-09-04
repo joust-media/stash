@@ -5,6 +5,7 @@ import type { KidHome, TaskRow } from '../../shared/types'
 import { api } from '../lib/api'
 import { MINUS, money } from '../lib/format'
 import { Hero } from '../components/Hero'
+import { Keypad, pushDigit } from '../components/Keypad'
 import { LandedMoment } from '../components/LandedMoment'
 import { HERO_POSE } from '../components/Mascot'
 import { Money } from '../components/Money'
@@ -328,19 +329,7 @@ function SpendView({
       <div className="scroll-y animate-fade -mx-1 flex flex-1 flex-col gap-5 px-6 pt-5 pb-3 [&>*]:shrink-0">
         <div className="flex flex-col items-center gap-3">
           <Eyebrow onGreen>How much?</Eyebrow>
-          <label className="relative block cursor-text">
-            <Money cents={cents} size={58} tone="onGreen" sign={MINUS} />
-            <input
-              inputMode="decimal"
-              aria-label="Amount to take out"
-              value={amount}
-              onChange={(e) => {
-                setError(null)
-                setAmount(e.target.value.replace(/[^0-9.]/g, ''))
-              }}
-              className="absolute inset-0 h-full w-full cursor-text opacity-0 outline-none"
-            />
-          </label>
+          <Money cents={cents} size={58} tone="onGreen" sign={MINUS} />
 
           <div className="flex gap-2">
             <ChoiceChip selected={cents === 500} onClick={() => setAmount('5')}>
@@ -355,6 +344,20 @@ function SpendView({
             >
               All of it
             </ChoiceChip>
+          </div>
+
+          {/* The same keypad as everywhere money is typed — the OS keyboard
+              would eat half the screen and it never matched the tiles. */}
+          <div className="w-full pt-1">
+            <Keypad
+              onGreen
+              onDigit={(d) => {
+                setError(null)
+                setAmount((v) => pushDigit(v, d))
+              }}
+              onDot={() => setAmount((v) => (v.includes('.') ? v : (v || '0') + '.'))}
+              onBackspace={() => setAmount((v) => v.slice(0, -1))}
+            />
           </div>
         </div>
 

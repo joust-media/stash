@@ -46,7 +46,7 @@ approvalRoutes.get('/', async (c) => {
     ),
     all(
       `SELECT w.id, w.amount_cents, w.category, w.note, w.requested_at, w.goal_id, w.kind,
-              g.match_amount_cents, ${USER_COLUMNS}
+              w.image_media_id, g.match_amount_cents, ${USER_COLUMNS}
          FROM withdrawal_requests w
          JOIN users u ON u.id = w.kid_id
          LEFT JOIN goals g ON g.id = w.goal_id
@@ -86,6 +86,9 @@ approvalRoutes.get('/', async (c) => {
       timeLabel: timeLabel(r.requested_at),
       note: (r.note as string | null) ?? null,
       matchAmountCents: r.match_amount_cents == null ? null : Number(r.match_amount_cents),
+      // The kid's snap — the cash they handed over, or what a cash-out is for.
+      proofThumbUrl: r.image_media_id ? `/api/media/${r.image_media_id}/thumb` : null,
+      proofUrl: r.image_media_id ? `/api/media/${r.image_media_id}` : null,
     })),
   ].sort((a, b) => {
     /*
@@ -172,12 +175,20 @@ async function approveWithdrawal(conn: PoolConnection, requestId: number, parent
     },
     conn,
   )
+  const confirmedAt = new Date()
   await conn.query(
     `UPDATE withdrawal_requests
         SET status = 'confirmed', confirmed_by = ?, confirmed_at = ?, transaction_id = ?
       WHERE id = ?`,
-    [parentId, new Date(), t.id, row.id],
+    [parentId, confirmedAt, t.id, row.id],
   )
+  // Same grace as proof photos: the snap's job ends once the cash is recorded.
+  if (row.image_media_id != null) {
+    await conn.query(`UPDATE media SET purge_after = DATE_ADD(?, INTERVAL 30 DAY) WHERE id = ?`, [
+      confirmedAt,
+      row.image_media_id,
+    ])
+  }
 
   /*
    * A claimed goal is finished — the kid has the thing. Leaving it active would

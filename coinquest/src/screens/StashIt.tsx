@@ -53,6 +53,10 @@ export function StashIt() {
   const cents = Math.round(Number(raw || 0) * 100)
   const overCap = cents > CAP_CENTS
 
+  // The pile outside the burrow grows as the kid climbs their savings rung —
+  // one acorn at the bottom of the ladder, five at the top. Felt, not counted.
+  const pile = data ? 1 + Math.round((Math.max(0, Math.min(100, data.savings.pct)) / 100) * 4) : 3
+
   const request = useMutation({
     mutationFn: () =>
       api.requestDeposit({
@@ -85,7 +89,7 @@ export function StashIt() {
     <Screen tone="green" tint={data?.kid.avatarColor}>
       {/* The environment persists across beats; the gulp holds its end state
           so the acorn the kid just added stays on the pile. */}
-      <BurrowScene gulp={beat === 'drop' || beat === 'sent'} />
+      <BurrowScene gulp={beat === 'drop' || beat === 'sent'} pile={pile} />
 
       {home.isPending && <Spinner onGreen />}
       {home.isError && <ScreenMessage onGreen>{(home.error as Error).message}</ScreenMessage>}

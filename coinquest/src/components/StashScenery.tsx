@@ -23,13 +23,25 @@ const SPECKS = [
   { left: '70%', x: '24px', delay: '780ms' },
 ]
 
+/** The pile outside the burrow, biggest in the middle. Drawn front to back. */
+const PILE: { width: number; rotate: number; opacity: number }[] = [
+  { width: 24, rotate: 0, opacity: 0.9 },
+  { width: 18, rotate: -24, opacity: 0.85 },
+  { width: 17, rotate: 28, opacity: 0.85 },
+  { width: 15, rotate: -12, opacity: 0.8 },
+  { width: 14, rotate: 18, opacity: 0.8 },
+]
+
 /**
  * The environment layer for the Stash-it flow: a canopy up top, the ground
- * falling away toward a burrow at the bottom. `gulp` plays the swallow —
- * squash-and-stretch, specks, and one more acorn joining the pile — and holds
- * its end state, so the scene carries the new acorn into the next beat.
+ * falling away toward a burrow at the bottom. `pile` (1–5) sizes the acorn
+ * pile outside the mouth — the kid's saving made visible, felt not counted.
+ * `gulp` plays the swallow — squash-and-stretch, specks, and one more acorn
+ * joining the pile — and holds its end state, so the scene carries the new
+ * acorn into the next beat.
  */
-export function BurrowScene({ gulp }: { gulp?: boolean }) {
+export function BurrowScene({ gulp, pile = 3 }: { gulp?: boolean; pile?: number }) {
+  const acorns = PILE.slice(0, Math.max(1, Math.min(PILE.length, pile)))
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
       {/* Stepping down toward the forest floor. */}
@@ -81,15 +93,26 @@ export function BurrowScene({ gulp }: { gulp?: boolean }) {
         </div>
         {/* Acorns spilling from the mouth — the pile the kid is adding to. */}
         <div className="text-chestnut relative -mt-3 flex items-end justify-center gap-0.5">
-          <Acorn style={{ width: 18, opacity: 0.85, transform: 'rotate(-24deg)' }} />
-          <Acorn style={{ width: 24, opacity: 0.9 }} />
+          {[...acorns.filter((_, i) => i % 2 === 1).reverse(), acorns[0]].map((a, i) => (
+            <Acorn
+              key={`l${i}`}
+              style={{ width: a.width, opacity: a.opacity, transform: `rotate(${a.rotate}deg)` }}
+            />
+          ))}
           {gulp && (
             <Acorn
               className="animate-bounce-in"
               style={{ width: 21, transform: 'rotate(10deg)', animationDelay: '950ms' }}
             />
           )}
-          <Acorn style={{ width: 17, opacity: 0.85, transform: 'rotate(28deg)' }} />
+          {acorns
+            .filter((_, i) => i % 2 === 0 && i > 0)
+            .map((a, i) => (
+              <Acorn
+                key={`r${i}`}
+                style={{ width: a.width, opacity: a.opacity, transform: `rotate(${a.rotate}deg)` }}
+              />
+            ))}
         </div>
       </div>
     </div>

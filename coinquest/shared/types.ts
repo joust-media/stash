@@ -245,7 +245,10 @@ export interface ApprovalItem {
   note: string | null
   /** Set when the withdrawal is a Good Stuff claim — what the parent owes. */
   matchAmountCents?: number | null
-  /** Proof photo, when the achievement asked for one. */
+  /**
+   * The kid's photo, when one was attached: proof for an achievement, the
+   * cash for a hand-over, or what a cash-out is for.
+   */
   proofThumbUrl?: string | null
   proofUrl?: string | null
 }

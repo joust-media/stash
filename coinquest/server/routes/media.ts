@@ -140,7 +140,11 @@ export async function purgeExpiredMedia(): Promise<number> {
 
 /** POST /api/media — multipart: `file` + `actorId`. */
 mediaRoutes.post('/', async (c) => {
-  const body = await c.req.parseBody()
+  // parseBody throws on a request with no multipart body; that is a caller
+  // mistake, not a server error.
+  const body = await c.req.parseBody().catch(() => {
+    throw new HttpError(400, 'Attach a photo')
+  })
   const file = body.file
   const actor = await getUser(Number(body.actorId))
   if (!actor) throw new HttpError(403, 'Who is uploading this?')

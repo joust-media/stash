@@ -72,13 +72,13 @@ export function KidHome() {
           )}
           <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 pb-4 text-center">
             <Mascot pose={data?.kid.mascotPose ?? HERO_POSE.kidHome} height={228} />
-            <span className="display text-[38px] leading-tight font-extrabold text-white">
-              {greeting(data?.dailyGoal.done ?? 0, data?.kid.nickname || data?.kid.name)}
-            </span>
             <span className="text-[12px] font-bold tracking-[0.16em] text-white/80 uppercase">
               Your stash
             </span>
             <Money cents={data?.balanceCents ?? 0} size={76} tone="onGreen" className="-mt-1" />
+            <span className="display text-[38px] leading-tight font-extrabold text-white">
+              {greeting(data?.dailyGoal.done ?? 0, data?.kid.nickname || data?.kid.name)}
+            </span>
             {doing.length > 0 && (
               <span className="line-clamp-1 max-w-full px-4 text-[13px] text-white/80">
                 In progress: {doing.map((t) => t.title).join(' · ')}

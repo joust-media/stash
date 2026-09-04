@@ -8,6 +8,7 @@ import { FinishTask } from './screens/FinishTask'
 import { GoodStuffBrowse } from './screens/GoodStuffBrowse'
 import { Celebration } from './screens/Celebration'
 import { PiggyBank } from './screens/PiggyBank'
+import { StashIt } from './screens/StashIt'
 import { History } from './screens/History'
 import { Goals } from './screens/Goals'
 import { Profile } from './screens/Profile'
@@ -36,6 +37,7 @@ export function App() {
       <Route path="/kid/:kidId/finish/:choreId" element={<FinishTask />} />
       <Route path="/kid/:kidId/stuff" element={<GoodStuffBrowse />} />
       <Route path="/kid/:kidId/bank" element={<PiggyBank />} />
+      <Route path="/kid/:kidId/stash-it" element={<StashIt />} />
       <Route path="/kid/:kidId/goals" element={<Goals />} />
       <Route path="/kid/:kidId/history" element={<History />} />
       <Route path="/kid/:kidId/done" element={<Celebration />} />

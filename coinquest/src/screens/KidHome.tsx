@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { money } from '../lib/format'
 import { ForestBackdrop } from '../components/ForestBackdrop'
+import { LandedMoment } from '../components/LandedMoment'
 import { HERO_POSE, Mascot } from '../components/Mascot'
 import { Money } from '../components/Money'
 import {
@@ -139,6 +140,15 @@ export function KidHome() {
                 Stash
               </button>
             </div>
+
+            {/* The side door straight into the burrow: cash in hand, one tap. */}
+            <button
+              type="button"
+              onClick={() => navigate(`/kid/${kidId}/stash-it`)}
+              className="pressable display flex min-h-11 w-full items-center justify-center rounded-full border-2 border-white/25 bg-white/10 text-[15px] font-bold text-white"
+            >
+              Got cash? Stash it
+            </button>
           </div>
         </ForestBackdrop>
 
@@ -237,6 +247,9 @@ export function KidHome() {
       )}
 
       <TabBar tabs={KID_TABS(kidId)} />
+
+      {/* A parent confirmed a hand-over since the kid last looked. */}
+      {data && <LandedMoment home={data} />}
     </Screen>
   )
 }

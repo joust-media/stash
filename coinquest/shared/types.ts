@@ -155,6 +155,21 @@ export interface Milestone {
   nudge: string | null
 }
 
+/**
+ * A cash hand-over a parent has confirmed recently. Only confirmed requests
+ * appear — a declined one simply leaves the waiting list, because Stash never
+ * sends a negative message. The id is stable, so the client can remember which
+ * landings the kid has already seen.
+ */
+export interface LandedDeposit {
+  id: number
+  amountCents: number
+  note: string | null
+  confirmedAt: string
+  /** Who confirmed — "Dad confirmed it", never just "a parent" if we know. */
+  byName: string
+}
+
 export interface KidHome {
   kid: Person
   balanceCents: number
@@ -172,6 +187,8 @@ export interface KidHome {
   heldCents: number
   /** Everything this kid is waiting on a parent for, both directions. */
   requests: KidRequest[]
+  /** Cash hand-overs confirmed in the last week — the "it landed" moments. */
+  landed: LandedDeposit[]
   /** Every goal this kid is saving towards; `goal` is the active one. */
   goals: Goal[]
   /** The Good Stuff — parent suggestions this kid can see. Filtered server-side. */

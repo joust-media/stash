@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useSession } from '../lib/session'
 import { money } from '../lib/format'
-import { Keypad } from '../components/Keypad'
+import { Keypad, pushDigit } from '../components/Keypad'
 import { Money } from '../components/Money'
 import {
   Avatar,
@@ -20,13 +20,6 @@ import { Hero } from '../components/Hero'
 import { HERO_POSE } from '../components/Mascot'
 
 const QUICK = [500, 1000, 2000, 5000]
-
-/** Appends a keypad digit while keeping the value a valid money string. */
-function pushDigit(value: string, digit: string): string {
-  if (value.includes('.') && value.split('.')[1].length >= 2) return value
-  if (value === '0') return digit
-  return value + digit
-}
 
 /** 04 — Deposit cash: parent-only, writes a deposit transaction. */
 export function Deposit() {

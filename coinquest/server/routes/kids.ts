@@ -6,6 +6,7 @@ import { REMINDERS_PER_DAY, remindersUsedToday } from './reminders.ts'
 import type {
   KidHome,
   KidRequest,
+  LandedDeposit,
   Ledger,
   LedgerEntry,
   LedgerGroup,
@@ -74,7 +75,7 @@ kidRoutes.get('/:id/home', async (c) => {
   const dayStart = new Date()
   dayStart.setHours(0, 0, 0, 0)
 
-  const [parents, finished, doneToday, held, waitingTasks, waitingCash] = await Promise.all([
+  const [parents, finished, doneToday, held, waitingTasks, waitingCash, landedRows] = await Promise.all([
     all<UserRow>(`SELECT * FROM users WHERE family_id = ? AND role = 'parent' ORDER BY id`, [
       kid.family_id,
     ]),
@@ -106,7 +107,26 @@ kidRoutes.get('/:id/home', async (c) => {
         ORDER BY requested_at DESC`,
       [kid.id],
     ),
+    // Hand-overs confirmed within the week: the client shows each landing
+    // once. Only 'confirmed' — a declined request is never surfaced to a kid.
+    all(
+      `SELECT w.id, w.amount_cents, w.note, w.confirmed_at, u.name AS by_name
+         FROM withdrawal_requests w
+         LEFT JOIN users u ON u.id = w.confirmed_by
+        WHERE w.kid_id = ? AND w.kind = 'deposit' AND w.status = 'confirmed'
+          AND w.confirmed_at >= ?
+        ORDER BY w.confirmed_at DESC`,
+      [kid.id, new Date(Date.now() - 7 * 86_400_000)],
+    ),
   ])
+
+  const landed: LandedDeposit[] = landedRows.map((r) => ({
+    id: Number(r.id),
+    amountCents: Number(r.amount_cents),
+    note: (r.note as string | null) ?? null,
+    confirmedAt: iso(r.confirmed_at),
+    byName: (r.by_name as string | null) ?? 'a parent',
+  }))
 
   // Everything the kid is waiting on, both directions, newest first.
   const requests: KidRequest[] = [
@@ -145,6 +165,7 @@ kidRoutes.get('/:id/home', async (c) => {
     savings: savingsMilestone(balanceCents),
     heldCents: Number(held?.n ?? 0),
     requests,
+    landed,
     // Filtered in SQL — a sibling's suggestions never reach this client.
     suggestions: await suggestionsFor(kid.id, Number(kid.family_id)),
     // Three things a day keeps the stash growing. The target is a rhythm, not

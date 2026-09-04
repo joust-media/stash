@@ -10,7 +10,7 @@ import type { CSSProperties, ReactNode } from 'react'
  * backdrop recipe.
  */
 
-function Acorn({ className, style }: { className?: string; style?: CSSProperties }) {
+export function Acorn({ className, style }: { className?: string; style?: CSSProperties }) {
   return (
     <svg viewBox="0 0 100 120" className={className} style={style} aria-hidden focusable="false">
       <path d="M48 2h4a4 4 0 0 1 0 8h-4a4 4 0 0 1 0-8Z" fill="currentColor" />
@@ -20,7 +20,7 @@ function Acorn({ className, style }: { className?: string; style?: CSSProperties
   )
 }
 
-function Leaf({ className, style }: { className?: string; style?: CSSProperties }) {
+export function Leaf({ className, style }: { className?: string; style?: CSSProperties }) {
   return (
     <svg viewBox="0 0 100 120" className={className} style={style} aria-hidden focusable="false">
       <path

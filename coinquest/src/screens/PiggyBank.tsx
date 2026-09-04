@@ -5,6 +5,7 @@ import type { KidHome, TaskRow } from '../../shared/types'
 import { api } from '../lib/api'
 import { MINUS, money } from '../lib/format'
 import { Hero } from '../components/Hero'
+import { LandedMoment } from '../components/LandedMoment'
 import { HERO_POSE } from '../components/Mascot'
 import { Money } from '../components/Money'
 import { PhotoInput, type UploadedPhoto } from '../components/PhotoInput'
@@ -25,7 +26,7 @@ import {
 
 const CATEGORIES = ['Going out', 'Food', 'Gift', 'Other']
 
-type Mode = 'idle' | 'add' | 'earn' | 'deposit' | 'spend'
+type Mode = 'idle' | 'add' | 'earn' | 'spend'
 
 /**
  * My Stash. Money in and money out both start here, and both need a parent:
@@ -83,17 +84,10 @@ export function PiggyBank() {
         />
       )}
       {data && mode === 'add' && (
-        <AddChooser onEarn={() => setMode('earn')} onDeposit={() => setMode('deposit')} onCancel={() => setMode('idle')} />
-      )}
-      {data && mode === 'deposit' && (
-        <DepositView
-          kidId={kidId}
-          approverName={data.approverName}
-          onDone={() => {
-            setMode('idle')
-            queryClient.invalidateQueries({ queryKey: ['kidHome', kidId] })
-          }}
-          onCancel={() => setMode('add')}
+        <AddChooser
+          onEarn={() => setMode('earn')}
+          onDeposit={() => navigate(`/kid/${kidId}/stash-it`)}
+          onCancel={() => setMode('idle')}
         />
       )}
       {data && mode === 'earn' && (
@@ -118,6 +112,9 @@ export function PiggyBank() {
       )}
 
       <TabBar tabs={KID_TABS(kidId)} />
+
+      {/* A parent confirmed a hand-over since the kid last looked. */}
+      {data && <LandedMoment home={data} />}
     </Screen>
   )
 }
@@ -244,91 +241,6 @@ function AddChooser({
         Cancel
       </SmallButton>
     </div>
-  )
-}
-
-/**
- * Real cash changed hands already — this files the record of it. Which is
- * exactly why it jumps the parent's queue once sent: the money exists, in a
- * parent's hand, and the app is the only place it doesn't yet.
- */
-function DepositView({
-  kidId,
-  approverName,
-  onDone,
-  onCancel,
-}: {
-  kidId: number
-  approverName: string
-  onDone: () => void
-  onCancel: () => void
-}) {
-  const [amount, setAmount] = useState('')
-  const [note, setNote] = useState('')
-  const [error, setError] = useState<string | null>(null)
-
-  const cents = Math.round(Number(amount || 0) * 100)
-  const valid = cents > 0
-
-  const request = useMutation({
-    mutationFn: () => api.requestDeposit({ kidId, amountCents: cents, note: note || undefined }),
-    onError: (err: Error) => setError(err.message),
-    onSuccess: onDone,
-  })
-
-  return (
-    <>
-      <div className="scroll-y animate-fade -mx-1 flex flex-1 flex-col gap-5 px-6 pt-5 pb-3 [&>*]:shrink-0">
-        <div className="flex flex-col items-center gap-3">
-          <Eyebrow onGreen>How much did you hand over?</Eyebrow>
-          <label className="relative block cursor-text">
-            <Money cents={cents} size={58} tone="onGreen" sign="+" />
-            <input
-              inputMode="decimal"
-              aria-label="Amount handed over"
-              value={amount}
-              onChange={(e) => {
-                setError(null)
-                setAmount(e.target.value.replace(/[^0-9.]/g, ''))
-              }}
-              className="absolute inset-0 h-full w-full cursor-text opacity-0 outline-none"
-            />
-          </label>
-          <div className="flex gap-2">
-            {[5, 10, 20].map((d) => (
-              <ChoiceChip key={d} selected={cents === d * 100} onClick={() => setAmount(String(d))}>
-                ${d}
-              </ChoiceChip>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2.5">
-          <Eyebrow onGreen>Where&rsquo;s it from? (optional)</Eyebrow>
-          <input
-            value={note}
-            maxLength={240}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Birthday money from Grandma"
-            className="rounded-inset border-line-cream bg-surface text-chestnut w-full border-2 px-4 py-3 text-[15px] font-bold outline-none"
-          />
-        </div>
-
-        {error && <p className="text-[14px] font-bold text-white">{error}</p>}
-      </div>
-
-      <div className="flex shrink-0 flex-col gap-2 px-6 pb-3">
-        <Button variant="onGreen" disabled={!valid || request.isPending} onClick={() => request.mutate()}>
-          {valid ? `${approverName} has my ${money(cents)}` : 'Enter the amount'}
-        </Button>
-        <p className="text-center text-[12px] text-white/80">
-          {approverName} confirms it and it lands in your stash.
-        </p>
-        <SmallButton variant="quiet" className="border-white/30 text-white" onClick={onCancel}>
-          Back
-        </SmallButton>
-      </div>
-    </>
   )
 }
 

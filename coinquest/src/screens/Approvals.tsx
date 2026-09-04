@@ -31,6 +31,8 @@ export function Approvals() {
   const queryClient = useQueryClient()
   const { parent } = useSession()
   const [viewing, setViewing] = useState<ApprovalItem | null>(null)
+  // A just-confirmed hand-over: a short-lived "their number is right now" beat.
+  const [confirmed, setConfirmed] = useState<{ kidName: string; cents: number } | null>(null)
 
   const { data, isPending, isError, error } = useQuery({ queryKey: ['approvals'], queryFn: api.approvals })
 
@@ -45,6 +47,12 @@ export function Approvals() {
       await (approve
         ? api.approve(item.kind, item.id, parent!.id)
         : api.reject(item.kind, item.id, parent!.id))
+    },
+    onSuccess: (_data, { item, approve }) => {
+      if (approve && item.kind === 'deposit') {
+        setConfirmed({ kidName: item.kid.name, cents: item.amountCents })
+        setTimeout(() => setConfirmed(null), 3500)
+      }
     },
     onSettled: refresh,
   })
@@ -80,6 +88,15 @@ export function Approvals() {
     >
       {isPending && <Spinner />}
       {isError && <ScreenMessage>{(error as Error).message}</ScreenMessage>}
+
+      {/* Outlives the card it came from, so it still shows as the queue clears. */}
+      {confirmed && (
+        <div className="animate-fade-up bg-leaf/12 rounded-inset mx-6 mt-4 shrink-0 px-4 py-3">
+          <span className="text-leaf-deep text-[14px] leading-snug font-bold">
+            Added to {confirmed.kidName}&rsquo;s stash &mdash; their number is right now.
+          </span>
+        </div>
+      )}
 
       {data && count === 0 && (
         <ScreenMessage>Approved achievements show up in each kid&rsquo;s history.</ScreenMessage>

@@ -5,6 +5,7 @@ import type { Person, Pose } from '../../shared/types'
 import { AVATAR_COLORS, api } from '../lib/api'
 import { useSession } from '../lib/session'
 import { Hero } from '../components/Hero'
+import { PhotoInput, type UploadedPhoto } from '../components/PhotoInput'
 import { HERO_POSE, Mascot, POSES } from '../components/Mascot'
 import {
   Avatar,
@@ -45,6 +46,7 @@ export function Profile() {
   const canEditPin = Boolean(parent) && data?.role === 'parent'
 
   const [draft, setDraft] = useState<Partial<Person> | null>(null)
+  const [avatarPhoto, setAvatarPhoto] = useState<UploadedPhoto | null | 'keep'>('keep')
   const [pin, setPin] = useState('')
   const [saved, setSaved] = useState(false)
   const [error2, setError2] = useState<string | null>(null)
@@ -62,6 +64,8 @@ export function Profile() {
         about: draft?.about ?? null,
         age: draft?.age ?? null,
         avatarColor: draft?.avatarColor,
+        // 'keep' means untouched this session; anything else moves the photo.
+        ...(avatarPhoto === 'keep' ? {} : { avatarMediaId: avatarPhoto?.id ?? null }),
         mascotPose: draft?.mascotPose ?? null,
         ...(canEditPin && pin ? { pin } : {}),
       }),
@@ -98,7 +102,12 @@ export function Profile() {
       {draft && (
         <div className="scroll-y animate-fade -mx-1 flex flex-1 flex-col gap-4 px-6 pt-4 pb-6 [&>*]:shrink-0">
           <Card className="flex items-center gap-4 p-4">
-            <Avatar initial={(draft.nickname || draft.name || '?').charAt(0)} color={draft.avatarColor!} size={56} />
+            <Avatar
+              initial={(draft.nickname || draft.name || '?').charAt(0)}
+              color={draft.avatarColor!}
+              image={avatarPhoto === 'keep' ? draft.avatarUrl : (avatarPhoto?.thumbUrl ?? null)}
+              size={56}
+            />
             <div className="flex flex-col gap-0.5">
               <span className="display text-chestnut text-[19px] font-bold">
                 {draft.nickname || draft.name}
@@ -108,6 +117,17 @@ export function Profile() {
               </span>
             </div>
           </Card>
+
+          <Field label="Photo" hint="A real face beats an initial. Optional.">
+            <PhotoInput
+              actorId={personId}
+              value={avatarPhoto === 'keep'
+                ? (draft.avatarUrl ? { id: 0, url: draft.avatarUrl, thumbUrl: draft.avatarUrl } : null)
+                : avatarPhoto}
+              onChange={setAvatarPhoto}
+              label="Add a photo"
+            />
+          </Field>
 
           <Field label="Name">
             <TextField

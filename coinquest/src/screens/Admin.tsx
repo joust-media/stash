@@ -7,6 +7,7 @@ import { api, type ChoreInput, type SuggestedItemInput } from '../lib/api'
 import { useSession } from '../lib/session'
 import { money } from '../lib/format'
 import { MatchBadge } from '../components/GoodStuff'
+import { PhotoInput, type UploadedPhoto } from '../components/PhotoInput'
 import { Hero } from '../components/Hero'
 import { HERO_POSE } from '../components/Mascot'
 import { CHORE_ICONS, CHORE_ICON_KEYS, ChoreIcon, ChoreIconBadge } from '../components/ChoreIcon'
@@ -75,7 +76,12 @@ export function Admin() {
       </div>
 
       {section === 'achievements' && (
-        <AchievementsSection openNew={params.get('new') !== null} onConsumeNew={() => setParams({}, { replace: true })} />
+        <>
+          <div className="shrink-0 px-6 pt-3">
+            <PhotoProofSwitch />
+          </div>
+          <AchievementsSection openNew={params.get('new') !== null} onConsumeNew={() => setParams({}, { replace: true })} />
+        </>
       )}
       {section === 'goals' && <GoalsSection />}
       {section === 'good-stuff' && <GoodStuffSection />}
@@ -87,6 +93,34 @@ export function Admin() {
 }
 
 /* ------------------------------------------------------- achievements ---- */
+
+function PhotoProofSwitch() {
+  const queryClient = useQueryClient()
+  const { parent } = useSession()
+  const family = useQuery({ queryKey: ['family'], queryFn: api.family })
+
+  const toggle = useMutation({
+    mutationFn: (next: boolean) => api.setFamilySettings({ parentId: parent!.id, photoProofEnabled: next }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['family'] })
+      queryClient.invalidateQueries({ queryKey: ['kidHome'] })
+    },
+  })
+
+  if (!family.data) return null
+  const on = family.data.photoProofEnabled
+  return (
+    <div className="bg-surface rounded-card flex items-center justify-between gap-3 px-4 py-3 shadow-[var(--shadow-card)]">
+      <div className="flex min-w-0 flex-col">
+        <span className="text-chestnut text-[14px] leading-tight font-bold">Photo proof</span>
+        <span className="text-mustache/65 text-[12px] leading-tight">
+          {on ? 'Achievements can ask for a photo at the finish.' : 'No achievement asks for photos.'}
+        </span>
+      </div>
+      <Toggle on={on} onChange={(next) => toggle.mutate(next)} label="Photo proof" />
+    </div>
+  )
+}
 
 function AchievementsSection({ openNew, onConsumeNew }: { openNew: boolean; onConsumeNew: () => void }) {
   const queryClient = useQueryClient()
@@ -255,6 +289,10 @@ function ChoreForm({
   const [schedule, setSchedule] = useState<Schedule>(chore?.schedule ?? 'daily')
   const [detail, setDetail] = useState(chore?.scheduleDetail ?? '')
   const [description, setDescription] = useState(chore?.description ?? '')
+  const [photoProof, setPhotoProof] = useState<'off' | 'optional' | 'required'>(chore?.photoProof ?? 'off')
+  const [image, setImage] = useState<UploadedPhoto | null>(
+    chore?.imageUrl ? { id: 0, url: chore.imageUrl, thumbUrl: chore.imageUrl } : null,
+  )
   const [icon, setIcon] = useState<string>(chore?.icon ?? 'chore')
   const [kidIds, setKidIds] = useState<number[]>(chore?.assignees.map((a) => a.id) ?? [])
   const [error, setError] = useState<string | null>(null)
@@ -268,6 +306,8 @@ function ChoreForm({
         schedule,
         scheduleDetail: detail || null,
         description: description.trim() || null,
+        photoProof,
+        imageMediaId: image && image.id !== 0 ? image.id : null,
         icon,
         kidIds,
       }
@@ -283,6 +323,20 @@ function ChoreForm({
 
       <Field label="What needs doing?">
         <TextField autoFocus value={title} onChange={setTitle} placeholder="Take out the trash" />
+      </Field>
+
+      <Field label="Photo proof">
+        <div className="flex gap-2">
+          {(['off', 'optional', 'required'] as const).map((mode) => (
+            <ChoiceChip key={mode} selected={photoProof === mode} onClick={() => setPhotoProof(mode)}>
+              {mode === 'off' ? 'Off' : mode === 'optional' ? 'Optional' : 'Required'}
+            </ChoiceChip>
+          ))}
+        </div>
+      </Field>
+
+      <Field label="A picture for it (optional)">
+        <PhotoInput actorId={parent!.id} value={image} onChange={setImage} label="Add a picture" />
       </Field>
 
       {/* Shown to the kid full-screen before they hit Start. */}

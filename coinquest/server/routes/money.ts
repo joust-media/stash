@@ -38,13 +38,15 @@ moneyRoutes.post('/deposits', async (c) => {
  * the request; the money does not move until a parent approves it.
  */
 moneyRoutes.post('/withdrawals', async (c) => {
-  const { kidId, amountCents, category, note, goalId } = await c.req.json<{
+  const { kidId, amountCents, category, note, goalId, imageMediaId } = await c.req.json<{
     kidId: number
     amountCents: number
     category: string
     note?: string
     /** Set when this is a Good Stuff claim rather than a plain cash-out. */
     goalId?: number | null
+    /** Optional snap of what the money is for. */
+    imageMediaId?: number | null
   }>()
   const kid = await requireKid(Number(kidId))
   const amount = Math.round(Number(amountCents))
@@ -101,8 +103,8 @@ moneyRoutes.post('/withdrawals', async (c) => {
     }
 
     const [result] = await conn.query(
-      `INSERT INTO withdrawal_requests (kid_id, amount_cents, category, note, status, requested_at, goal_id)
-       VALUES (?, ?, ?, ?, 'pending', ?, ?)`,
+      `INSERT INTO withdrawal_requests (kid_id, amount_cents, category, note, status, requested_at, goal_id, image_media_id)
+       VALUES (?, ?, ?, ?, 'pending', ?, ?, ?)`,
       [
         kid.id,
         amount,
@@ -110,6 +112,7 @@ moneyRoutes.post('/withdrawals', async (c) => {
         note?.trim() || null,
         new Date(),
         claimGoalId,
+        imageMediaId ? Number(imageMediaId) : null,
       ],
     )
     return Number((result as { insertId: number }).insertId)

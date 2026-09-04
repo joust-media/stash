@@ -7,6 +7,7 @@ import { useSession } from '../lib/session'
 import { money } from '../lib/format'
 import { CHORE_ICONS, CHORE_ICON_KEYS, ChoreIcon, ChoreIconBadge } from '../components/ChoreIcon'
 import { AdoptPanel, GoodStuffRow, MatchBadge, MatchLine } from '../components/GoodStuff'
+import { PhotoInput, type UploadedPhoto } from '../components/PhotoInput'
 import { Hero } from '../components/Hero'
 import { HERO_POSE } from '../components/Mascot'
 import { Money } from '../components/Money'
@@ -272,23 +273,6 @@ export function Goals() {
   )
 }
 
-/**
- * Shrink a photo before it ever leaves the device: longest edge 640px, JPEG.
- * The server caps the stored string, so oversized uploads fail loudly there —
- * this keeps honest photos under the cap in the first place.
- */
-async function fileToDataUrl(file: File): Promise<string> {
-  const bitmap = await createImageBitmap(file)
-  const scale = Math.min(1, 640 / Math.max(bitmap.width, bitmap.height))
-  const canvas = document.createElement('canvas')
-  canvas.width = Math.max(1, Math.round(bitmap.width * scale))
-  canvas.height = Math.max(1, Math.round(bitmap.height * scale))
-  canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
-  let out = canvas.toDataURL('image/jpeg', 0.82)
-  if (out.length > 380_000) out = canvas.toDataURL('image/jpeg', 0.55)
-  return out
-}
-
 function GoalForm({
   kidId,
   actorId,
@@ -307,7 +291,9 @@ function GoalForm({
   const [title, setTitle] = useState(goal?.title ?? '')
   const [target, setTarget] = useState(goal ? (goal.targetCents / 100).toFixed(2) : '')
   const [icon, setIcon] = useState<string>(goal?.icon ?? 'stash')
-  const [image, setImage] = useState<string | null>(goal?.image ?? null)
+  const [photo, setPhoto] = useState<UploadedPhoto | null>(
+    goal?.image ? { id: 0, url: goal.image, thumbUrl: goal.image } : null,
+  )
   // The first goal is always the tracked one; after that it is a choice.
   const [makeActive, setMakeActive] = useState(goal ? goal.active : !hasGoals)
   const [error, setError] = useState<string | null>(null)
@@ -320,7 +306,7 @@ function GoalForm({
         title,
         targetCents: Math.round(Number(target) * 100),
         icon,
-        image,
+        imageMediaId: photo && photo.id !== 0 ? photo.id : null,
         active: makeActive,
       }
       await (goal ? api.updateGoal(goal.id, input) : api.createGoal(input))
@@ -348,46 +334,7 @@ function GoalForm({
       </Field>
 
       <Field label="Add a photo of it">
-        <div className="flex items-center gap-3">
-          {image ? (
-            <img
-              src={image}
-              alt="Your goal"
-              className="h-16 w-16 shrink-0 rounded-2xl object-cover shadow-[var(--shadow-card)]"
-            />
-          ) : (
-            <span className="border-line-cream text-mustache/50 flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 border-dashed text-[11px] font-bold">
-              Photo
-            </span>
-          )}
-          <div className="flex flex-col gap-1.5">
-            <label className="pressable display border-leaf text-leaf-deep inline-flex w-fit cursor-pointer items-center rounded-full border-2 bg-white px-4 py-2 text-[14px] font-bold">
-              {image ? 'Change photo' : 'Choose photo'}
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0]
-                  if (file) setImage(await fileToDataUrl(file))
-                  e.target.value = ''
-                }}
-              />
-            </label>
-            {image && (
-              <button
-                type="button"
-                onClick={() => setImage(null)}
-                className="text-mustache/55 w-fit text-[12px] font-bold underline underline-offset-2"
-              >
-                Remove
-              </button>
-            )}
-            <span className="text-mustache/55 text-[11px]">
-              Seeing the real thing beats any icon.
-            </span>
-          </div>
-        </div>
+        <PhotoInput actorId={actorId} value={photo} onChange={setPhoto} label="Choose photo" />
       </Field>
 
       <Field label="Or pick a picture">

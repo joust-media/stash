@@ -48,7 +48,8 @@ export function useEndTask(kidId: number) {
   const navigate = useNavigate()
 
   return useMutation({
-    mutationFn: (task: TaskRow) => api.endTask(task.completionId!, kidId),
+    mutationFn: ({ task, proofMediaId }: { task: TaskRow; proofMediaId?: number | null }) =>
+      api.endTask(task.completionId!, kidId, proofMediaId ?? null),
     onSuccess: (result) => {
       navigate(`/kid/${kidId}/done`, { state: result })
     },
@@ -56,6 +57,23 @@ export function useEndTask(kidId: number) {
       for (const key of KID_KEYS(kidId)) queryClient.invalidateQueries({ queryKey: key })
     },
   })
+}
+
+/**
+ * What the End button actually does. An achievement that wants a photo routes
+ * through the Finish screen; everything else ends on the spot, as before.
+ */
+export function useFinishTask(kidId: number) {
+  const navigate = useNavigate()
+  const end = useEndTask(kidId)
+  return {
+    isPending: end.isPending,
+    variables: end.variables?.task,
+    finish: (task: TaskRow) => {
+      if (task.photoProof !== 'off') navigate(`/kid/${kidId}/finish/${task.choreId}`)
+      else end.mutate({ task })
+    },
+  }
 }
 
 export function useCancelTask(kidId: number) {

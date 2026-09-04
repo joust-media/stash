@@ -9,6 +9,7 @@ import type {
   Ledger,
   Person,
   ProfileUpdate,
+  EarningsSummary,
   Schedule,
   SuggestedItem,
   SuggestedItemRow,
@@ -62,8 +63,10 @@ export interface GoalInput {
   title: string
   targetCents: number
   icon?: string | null
-  /** A photo of the thing, client-resized to a small data URL. */
+  /** A photo of the thing, client-resized to a small data URL (legacy). */
   image?: string | null
+  /** The uploaded photo's media id — the current path. */
+  imageMediaId?: number | null
   active?: boolean
 }
 
@@ -83,6 +86,8 @@ export interface ChoreInput {
   title: string
   rewardCents: number
   description?: string | null
+  photoProof?: 'off' | 'optional' | 'required'
+  imageMediaId?: number | null
   schedule: Schedule
   scheduleDetail?: string | null
   icon?: string | null
@@ -104,8 +109,8 @@ export const api = {
   /** A task runs Start → End; End is what alerts the parent. */
   startTask: (choreId: number, kidId: number) =>
     send<StartResult>('POST', '/completions/start', { choreId, kidId }),
-  endTask: (completionId: number, kidId: number) =>
-    send<CompletionResult>('POST', `/completions/${completionId}/end`, { kidId }),
+  endTask: (completionId: number, kidId: number, proofMediaId?: number | null) =>
+    send<CompletionResult>('POST', `/completions/${completionId}/end`, { kidId, proofMediaId }),
   cancelTask: (completionId: number, kidId: number) =>
     send<{ ok: true }>('POST', `/completions/${completionId}/cancel`, { kidId }),
 
@@ -128,6 +133,8 @@ export const api = {
     note?: string
     /** Set to claim a Good Stuff goal — the server re-derives the amount. */
     goalId?: number | null
+    /** Optional snap of what the money is for. */
+    imageMediaId?: number | null
   }) => send<{ id: number }>('POST', '/money/withdrawals', input),
 
   createChore: (input: ChoreInput) => send<{ id: number }>('POST', '/chores', input),
@@ -145,6 +152,26 @@ export const api = {
   goodStuff: (kidId: number) => request<SuggestedItem[]>(`/good-stuff?kidId=${kidId}`),
   sendReminder: (kidId: number) =>
     send<{ remainingToday: number }>('POST', '/reminders', { kidId }),
+  earnings: (kidId: number) => request<EarningsSummary>(`/kids/${kidId}/earnings`),
+
+  /**
+   * The one image uploader. The server re-encodes, strips EXIF (GPS included),
+   * resizes and thumbnails whatever it gets — the client's downscale is only a
+   * courtesy to slow connections.
+   */
+  uploadMedia: async (file: File | Blob, actorId: number) => {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('actorId', String(actorId))
+    const res = await fetch('/api/media', { method: 'POST', body: form })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      throw new ApiError(res.status, (body as { error?: string }).error ?? 'That photo did not upload')
+    }
+    return (await res.json()) as { id: number; width: number; height: number; url: string; thumbUrl: string }
+  },
+  setFamilySettings: (input: { parentId: number; photoProofEnabled: boolean }) =>
+    send<{ ok: true }>('PATCH', '/family/settings', input),
   allGoodStuff: () => request<SuggestedItemRow[]>('/good-stuff/all'),
   createSuggestion: (input: SuggestedItemInput) => send<{ id: number }>('POST', '/good-stuff', input),
   updateSuggestion: (id: number, input: SuggestedItemInput) =>

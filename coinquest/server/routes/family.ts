@@ -1,7 +1,17 @@
 import { Hono } from 'hono'
-import { all, one } from '../db.ts'
+import { all, one, run } from '../db.ts'
 import type { FamilyOverview, KidSummary, WithdrawalRequest } from '../../shared/types.ts'
-import { balanceOf, goalFor, iso, periodKeyFor, toPerson, windowStart, type UserRow } from '../lib.ts'
+import {
+  HttpError,
+  balanceOf,
+  goalFor,
+  iso,
+  periodKeyFor,
+  requireParent,
+  toPerson,
+  windowStart,
+  type UserRow,
+} from '../lib.ts'
 
 export const familyRoutes = new Hono()
 
@@ -77,7 +87,9 @@ async function pendingWithdrawals(): Promise<WithdrawalRequest[]> {
 
 /** GET /api/family — the whole parent overview in one payload. */
 familyRoutes.get('/', async (c) => {
-  const family = await one<{ id: number; name: string }>('SELECT id, name FROM families ORDER BY id LIMIT 1')
+  const family = await one<{ id: number; name: string; photo_proof_enabled: number }>(
+    'SELECT id, name, photo_proof_enabled FROM families ORDER BY id LIMIT 1',
+  )
   if (!family) return c.json({ error: 'No family seeded' }, 404)
 
   const users = await all<UserRow>('SELECT * FROM users WHERE family_id = ? ORDER BY role DESC, id', [
@@ -96,6 +108,7 @@ familyRoutes.get('/', async (c) => {
 
   const payload: FamilyOverview = {
     family: { id: Number(family.id), name: family.name },
+    photoProofEnabled: Boolean(family.photo_proof_enabled ?? 1),
     parents,
     kids,
     totalHeldCents: kids.reduce((sum, k) => sum + k.balanceCents, 0),
@@ -105,4 +118,18 @@ familyRoutes.get('/', async (c) => {
     pendingWithdrawals: await pendingWithdrawals(),
   }
   return c.json(payload)
+})
+
+
+/** PATCH /api/family/settings — the family-level photo-proof switch. */
+familyRoutes.patch('/settings', async (c) => {
+  const body = await c.req.json<{ parentId: number; photoProofEnabled?: boolean }>()
+  const parent = await requireParent(body.parentId)
+  if (typeof body.photoProofEnabled !== 'boolean') throw new HttpError(400, 'Nothing to change')
+
+  await run('UPDATE families SET photo_proof_enabled = ? WHERE id = ?', [
+    body.photoProofEnabled ? 1 : 0,
+    parent.family_id,
+  ])
+  return c.json({ ok: true })
 })

@@ -82,8 +82,10 @@ interface GoalBody {
   title: string
   targetCents: number
   icon?: string | null
-  /** A photo of the thing, as a client-resized data URL. */
+  /** A photo of the thing, as a client-resized data URL (legacy path). */
   image?: string | null
+  /** The uploaded photo's media id — the current path. */
+  imageMediaId?: number | null
   /** Make this the tracked goal. The first goal always is. */
   active?: boolean
 }
@@ -103,8 +105,9 @@ goalRoutes.post('/', async (c) => {
     if (makeActive) await conn.query('UPDATE goals SET active = 0 WHERE kid_id = ?', [kid.id])
 
     const [result] = await conn.query(
-      'INSERT INTO goals (kid_id, title, target_cents, icon, image, active) VALUES (?, ?, ?, ?, ?, ?)',
-      [kid.id, title, target, body.icon || null, image, makeActive ? 1 : 0],
+      `INSERT INTO goals (kid_id, title, target_cents, icon, image, image_media_id, active)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [kid.id, title, target, body.icon || null, image, body.imageMediaId || null, makeActive ? 1 : 0],
     )
     return Number((result as { insertId: number }).insertId)
   })
@@ -125,12 +128,19 @@ goalRoutes.put('/:id', async (c) => {
     if (body.active) {
       await conn.query('UPDATE goals SET active = 0 WHERE kid_id = ?', [existing.kid_id])
     }
-    // `image` only moves when the client sent one; omitting it keeps the photo.
-    await conn.query(
-      `UPDATE goals SET title = ?, target_cents = ?, icon = ?${image ? ', image = ?' : ''}${body.active ? ', active = 1' : ''}
-        WHERE id = ?`,
-      image ? [title, target, body.icon || null, image, id] : [title, target, body.icon || null, id],
-    )
+    // Photos only move when the client sent one; omitting keeps what is there.
+    const sets = ['title = ?', 'target_cents = ?', 'icon = ?']
+    const params: unknown[] = [title, target, body.icon || null]
+    if (body.imageMediaId) {
+      sets.push('image_media_id = ?', 'image = NULL')
+      params.push(Number(body.imageMediaId))
+    } else if (image) {
+      sets.push('image = ?')
+      params.push(image)
+    }
+    if (body.active) sets.push('active = 1')
+    params.push(id)
+    await conn.query(`UPDATE goals SET ${sets.join(', ')} WHERE id = ?`, params)
   })
   return c.json({ ok: true })
 })

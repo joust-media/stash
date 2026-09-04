@@ -4,6 +4,7 @@ import { KidPicker } from './screens/KidPicker'
 import { KidHome } from './screens/KidHome'
 import { KidTasks } from './screens/KidTasks'
 import { TaskConfirm } from './screens/TaskConfirm'
+import { FinishTask } from './screens/FinishTask'
 import { GoodStuffBrowse } from './screens/GoodStuffBrowse'
 import { Celebration } from './screens/Celebration'
 import { PiggyBank } from './screens/PiggyBank'
@@ -32,6 +33,7 @@ export function App() {
       <Route path="/kid/:kidId" element={<KidHome />} />
       <Route path="/kid/:kidId/tasks" element={<KidTasks />} />
       <Route path="/kid/:kidId/task/:choreId" element={<TaskConfirm />} />
+      <Route path="/kid/:kidId/finish/:choreId" element={<FinishTask />} />
       <Route path="/kid/:kidId/stuff" element={<GoodStuffBrowse />} />
       <Route path="/kid/:kidId/bank" element={<PiggyBank />} />
       <Route path="/kid/:kidId/goals" element={<Goals />} />

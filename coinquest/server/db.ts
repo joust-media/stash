@@ -255,6 +255,40 @@ const DDL = [
    * nudge, not a siege — and the rows are the rate limit, so they are never
    * deleted, just aged past.
    */
+  /*
+   * One image, wherever it attaches — achievement art, goal photos, avatars,
+   * cash-out snaps, and proof photos. Every row has been re-encoded through the
+   * upload pipeline: EXIF (including GPS) stripped, orientation applied,
+   * resized, thumbnailed. `purge_after` is set only on proof photos — a photo
+   * taken by a child has done its job the moment a parent approves, and
+   * keeping it after that is pure liability.
+   */
+  `CREATE TABLE IF NOT EXISTS media (
+     id          INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+     storage_key VARCHAR(255) NOT NULL,
+     mime        VARCHAR(64) NOT NULL,
+     width       INT UNSIGNED NOT NULL,
+     height      INT UNSIGNED NOT NULL,
+     bytes       INT UNSIGNED NOT NULL,
+     thumb_key   VARCHAR(255) NOT NULL,
+     created_by  INT UNSIGNED NOT NULL,
+     created_at  DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+     purge_after DATETIME(3) NULL,
+     KEY idx_media_purge (purge_after),
+     CONSTRAINT fk_media_creator FOREIGN KEY (created_by) REFERENCES users(id)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+  /*
+   * Blob storage behind the storage adapter. In the database on purpose: the
+   * deploy host's filesystem is wiped on every release, so "prototype writes
+   * to local disk" would delete every family's photos each time we ship. The
+   * adapter interface is what lets S3 replace this without touching call sites.
+   */
+  `CREATE TABLE IF NOT EXISTS media_blobs (
+     storage_key VARCHAR(255) NOT NULL PRIMARY KEY,
+     data        MEDIUMBLOB NOT NULL
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
   `CREATE TABLE IF NOT EXISTS reminders (
      id         INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
      kid_id     INT UNSIGNED NOT NULL,
@@ -295,6 +329,25 @@ const ADDED_COLUMNS: { table: string; column: string; definition: string }[] = [
   // Carries a claim from request through approval to the ledger line.
   { table: 'withdrawal_requests', column: 'goal_id', definition: 'INT UNSIGNED NULL' },
   { table: 'transactions', column: 'goal_id', definition: 'INT UNSIGNED NULL' },
+
+  /*
+   * Images attach by nullable FK from the owning row — ownership is one-to-one
+   * everywhere, so no polymorphic join table.
+   */
+  { table: 'chores', column: 'image_media_id', definition: 'INT UNSIGNED NULL' },
+  { table: 'goals', column: 'image_media_id', definition: 'INT UNSIGNED NULL' },
+  { table: 'task_completions', column: 'proof_media_id', definition: 'INT UNSIGNED NULL' },
+  { table: 'users', column: 'avatar_media_id', definition: 'INT UNSIGNED NULL' },
+  { table: 'withdrawal_requests', column: 'image_media_id', definition: 'INT UNSIGNED NULL' },
+
+  // Per-achievement: does finishing need a photo? Off for everything existing.
+  {
+    table: 'chores',
+    column: 'photo_proof',
+    definition: `ENUM('off','optional','required') NOT NULL DEFAULT 'off'`,
+  },
+  // The one-switch family opt-out: a parent who wants no photos says so once.
+  { table: 'families', column: 'photo_proof_enabled', definition: 'TINYINT(1) NOT NULL DEFAULT 1' },
 
   // What finishing the task actually means — the criteria the kid agrees to
   // when they hit Start, shown full-screen before the task begins.

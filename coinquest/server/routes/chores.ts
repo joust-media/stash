@@ -45,6 +45,8 @@ async function cardsFor(kidId?: number): Promise<ChoreCard[]> {
     scheduleLabel: scheduleChip(c.schedule, c.schedule_detail, Boolean(c.active)),
     icon: c.icon ?? null,
     description: (c.description as string | null) ?? null,
+    photoProof: (c.photo_proof ?? 'off') as ChoreCard['photoProof'],
+    imageUrl: c.image_media_id ? `/api/media/${c.image_media_id}` : null,
     active: Boolean(c.active),
     assignees: assignees
       .filter((a) => Number(a.chore_id) === Number(c.id))

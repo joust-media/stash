@@ -66,22 +66,55 @@ taskRoutes.post('/completions/start', async (c) => {
  * parent is alerted: the completion moves to `pending` and joins the queue.
  */
 taskRoutes.post('/completions/:id/end', async (c) => {
-  const { kidId } = await c.req.json<{ kidId: number }>()
+  const { kidId, proofMediaId } = await c.req.json<{ kidId: number; proofMediaId?: number | null }>()
   const kid = await requireKid(Number(kidId))
   const id = Number(c.req.param('id'))
 
-  const row = await one<{ id: number; kid_id: number; status: string; started_at: Date | null }>(
-    'SELECT id, kid_id, status, started_at FROM task_completions WHERE id = ?',
+  const row = await one<{
+    id: number
+    kid_id: number
+    status: string
+    started_at: Date | null
+    photo_proof: string
+    photo_proof_enabled: number
+  }>(
+    `SELECT tc.id, tc.kid_id, tc.status, tc.started_at, ch.photo_proof, f.photo_proof_enabled
+       FROM task_completions tc
+       JOIN chores ch ON ch.id = tc.chore_id
+       JOIN families f ON f.id = ch.family_id
+      WHERE tc.id = ?`,
     [id],
   )
   if (!row) throw new HttpError(404, 'That is not on your list')
   if (Number(row.kid_id) !== kid.id) throw new HttpError(403, 'That is not yours to finish')
   if (row.status !== 'in_progress') throw new HttpError(409, 'That one is not in progress')
 
-  await run(`UPDATE task_completions SET status = 'pending', completed_at = ? WHERE id = ?`, [
-    new Date(),
-    id,
-  ])
+  /*
+   * The photo step lives inside End, before the parent is alerted. `required`
+   * is enforced here, not just in the screen — a task that demands proof
+   * cannot be finished without it, whatever the client says. The family-level
+   * switch overrides everything to off.
+   */
+  const wantsProof = Boolean(row.photo_proof_enabled) && row.photo_proof !== 'off'
+  let proofId: number | null = null
+  if (wantsProof && proofMediaId) {
+    const media = await one<{ id: number; created_by: number }>(
+      'SELECT id, created_by FROM media WHERE id = ?',
+      [Number(proofMediaId)],
+    )
+    if (!media || Number(media.created_by) !== kid.id) {
+      throw new HttpError(400, 'That photo did not come through — take it again')
+    }
+    proofId = Number(media.id)
+  }
+  if (wantsProof && row.photo_proof === 'required' && !proofId) {
+    throw new HttpError(400, 'Show your work — snap a photo to finish this one')
+  }
+
+  await run(
+    `UPDATE task_completions SET status = 'pending', completed_at = ?, proof_media_id = ? WHERE id = ?`,
+    [new Date(), proofId, id],
+  )
 
   const chore = await one<{ title: string; reward_cents: number }>(
     `SELECT ch.title, ch.reward_cents FROM task_completions tc

@@ -15,6 +15,8 @@ export interface Family {
 }
 
 export interface Person {
+  /** A real photo, when one is set — otherwise the initial-on-colour disc. */
+  avatarUrl?: string | null
   id: number
   familyId: number
   name: string
@@ -39,7 +41,7 @@ export interface Goal {
   active: boolean
   /** Key into the chore icon set, so a goal can look like the thing it is. */
   icon: string | null
-  /** A photo of the actual thing, as a data URL. Beats any icon. */
+  /** A photo of the actual thing — a served /api/media URL (or legacy data URL). */
   image: string | null
   /** How much is still to save. */
   remainingCents: number
@@ -111,6 +113,8 @@ export interface TaskRow {
   icon: string | null
   /** What finishing it means — the criteria the kid agrees to at Start. */
   description: string | null
+  /** Whether End wants a photo. Already resolved against the family switch. */
+  photoProof: 'off' | 'optional' | 'required'
   completionId: number | null
   status: CompletionStatus | null
   /** Set once the kid hits Start. Null until then. */
@@ -224,6 +228,9 @@ export interface ApprovalItem {
   note: string | null
   /** Set when the withdrawal is a Good Stuff claim — what the parent owes. */
   matchAmountCents?: number | null
+  /** Proof photo, when the achievement asked for one. */
+  proofThumbUrl?: string | null
+  proofUrl?: string | null
 }
 
 export interface ApprovalsPayload {
@@ -246,6 +253,10 @@ export interface ChoreCard {
   icon: string | null
   /** Criteria shown to the kid on the start screen. */
   description: string | null
+  /** Whether finishing wants a photo. */
+  photoProof: 'off' | 'optional' | 'required'
+  /** Catalogue art, when the parent added some. */
+  imageUrl: string | null
   active: boolean
   assignees: Person[]
   /** Completions recorded against this chore, ever. Blocks careless deletes. */
@@ -262,6 +273,8 @@ export interface WithdrawalRequest {
 }
 
 export interface FamilyOverview {
+  /** Family-level opt-out: when false, no achievement asks for a photo. */
+  photoProofEnabled: boolean
   family: Family
   parents: Person[]
   kids: KidSummary[]
@@ -289,9 +302,31 @@ export interface ProfileUpdate {
   age?: number | null
   avatarColor?: string
   mascotPose?: Pose | null
+  /** A real photo for the avatar; null clears back to the initial disc. */
+  avatarMediaId?: number | null
   pin?: string | null
 }
 
 export interface ApiError {
   error: string
+}
+
+/* ------------------------------------------------------------- earnings --- */
+
+export interface EarningsBucket {
+  label: string
+  cents: number
+}
+
+export interface EarningsWindow {
+  buckets: EarningsBucket[]
+  totalCents: number
+  /** The same-length window before this one. Null when it has nothing in it. */
+  prevTotalCents: number | null
+}
+
+/** What Home's earnings chart draws: daily bars for 7D, weekly for 30D. */
+export interface EarningsSummary {
+  seven: EarningsWindow
+  thirty: EarningsWindow
 }

@@ -77,6 +77,10 @@ userRoutes.patch('/:id', async (c) => {
     sets.push('avatar_color = ?')
     params.push(body.avatarColor)
   }
+  if (body.avatarMediaId !== undefined) {
+    sets.push('avatar_media_id = ?')
+    params.push(body.avatarMediaId ? Number(body.avatarMediaId) : null)
+  }
   if (body.mascotPose !== undefined) {
     if (body.mascotPose !== null && !POSES.includes(body.mascotPose)) {
       throw new HttpError(400, 'That is not one of Stash&apos;s poses')

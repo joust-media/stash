@@ -33,6 +33,8 @@ export async function wipe(): Promise<void> {
   try {
     await conn.query('SET FOREIGN_KEY_CHECKS = 0')
     for (const table of [
+      'media_blobs',
+      'media',
       'reminders',
       'suggested_items',
       'withdrawal_requests',
@@ -173,6 +175,10 @@ export async function seed(): Promise<void> {
       'Tidy your room': 'Floor clear, desk clear, clothes in the basket or the drawer — not the chair.',
       'Wash the car': 'Soap, rinse, and dry — inside windows too. Buckets away when you are done.',
     }
+    // A taste of photo proof: one required, one optional, the rest off.
+    await conn.query(`UPDATE chores SET photo_proof = 'required' WHERE family_id = ? AND title = 'Tidy your room'`, [familyId])
+    await conn.query(`UPDATE chores SET photo_proof = 'optional' WHERE family_id = ? AND title = 'Make the bed'`, [familyId])
+
     for (const [title, description] of Object.entries(DESCRIPTIONS)) {
       await conn.query('UPDATE chores SET description = ? WHERE family_id = ? AND title = ?', [
         description,

@@ -1,83 +1,65 @@
 import { useState } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { money } from '../lib/format'
-import { ChoreIconBadge } from '../components/ChoreIcon'
-import { useCancelTask, useEndTask } from '../components/TaskList'
-import { OutstandingRequests, TaskGrid, TaskTile } from '../components/TaskTile'
 import { Hero } from '../components/Hero'
-import { HERO_POSE, Mascot } from '../components/Mascot'
+import { HERO_POSE } from '../components/Mascot'
 import { Money } from '../components/Money'
-import { Avatar, Eyebrow, KID_TABS, Screen, ScreenMessage, Spinner, TabBar, cx } from '../components/ui'
-import type { Milestone, TaskRow } from '../../shared/types'
+import {
+  Avatar,
+  Button,
+  Eyebrow,
+  KID_TABS,
+  ProgressBar,
+  Screen,
+  ScreenMessage,
+  SmallButton,
+  Spinner,
+  TabBar,
+  cx,
+} from '../components/ui'
+import type { EarningsWindow, LedgerEntry } from '../../shared/types'
 
 /*
- * 02 — Kid home, the immersive one. The whole page is Leaf Green: the hero
- * melts into it, the work floats on white tiles, and the page reads as one
- * place rather than a header with a list under it. Every other screen stays
- * cream and list-like on purpose — home is where Stash lives.
+ * 02 — Home, the overview. It answers "how am I doing?" — who you are, what
+ * you have, what you've been earning, what's waiting. It never answers "what
+ * should I do next?": that question belongs to EARN, which is why there are no
+ * task tiles, no Start/End, and exactly one CTA on this screen, and it leaves.
  */
-
-type Filter = 'all' | 'todo' | 'doing' | 'waiting'
-
 export function KidHome() {
   const kidId = Number(useParams().kidId)
   const navigate = useNavigate()
-  const [filter, setFilter] = useState<Filter>('all')
+  const [window_, setWindow] = useState<'seven' | 'thirty'>('thirty')
+
   const { data, isPending, isError, error } = useQuery({
     queryKey: ['kidHome', kidId],
     queryFn: () => api.kidHome(kidId),
   })
-  const end = useEndTask(kidId)
-  const cancel = useCancelTask(kidId)
+  const earnings = useQuery({ queryKey: ['earnings', kidId], queryFn: () => api.earnings(kidId) })
+  const ledger = useQuery({ queryKey: ['ledger', kidId, 'all'], queryFn: () => api.ledger(kidId, 'all') })
 
-  const open = data?.tasks.filter((t) => t.status === null) ?? []
   const doing = data?.tasks.filter((t) => t.status === 'in_progress') ?? []
-  const waiting = data?.tasks.filter((t) => t.status === 'pending' || t.status === 'approved') ?? []
-
-  // A named goal is what the kid actually cares about; fall back to the ladder.
-  const milestone: Milestone | undefined = data
-    ? data.goal
-      ? {
-          label: data.goal.title,
-          detail: `${money(data.balanceCents)} of ${money(data.goal.targetCents)}`,
-          current: data.balanceCents,
-          target: data.goal.targetCents,
-          pct: data.goal.progressPct,
-          unit: 'cents',
-          complete: data.goal.progressPct >= 100,
-          nudge:
-            data.goal.progressPct >= 80 && data.goal.progressPct < 100
-              ? `Only ${money(data.goal.targetCents - data.balanceCents)} to go!`
-              : null,
-        }
-      : data.savings
-    : undefined
-
-  const tile = (task: TaskRow) => (
-    <TaskTile
-      key={task.choreId}
-      task={task}
-      onClick={(t) => navigate(`/kid/${kidId}/task/${t.choreId}`)}
-      onEnd={end.mutate}
-      onCancel={cancel.mutate}
-      busy={end.isPending && end.variables?.choreId === task.choreId}
-    />
-  )
+  const pendingIn = data?.requests.filter((r) => r.amountCents > 0) ?? []
+  const recent: LedgerEntry[] = ledger.data?.groups.flatMap((g) => g.entries).slice(0, 5) ?? []
+  const win = earnings.data?.[window_]
 
   return (
     <Screen
-      tone="green"
       tint={data?.kid.avatarColor}
       hero={
         <Hero
-          seamless
-          eyebrow={greeting()}
-          title={data ? `Hi, ${data.kid.nickname || data.kid.name}` : 'Hi'}
+          eyebrow={greeting(data?.dailyGoal.done ?? 0, data?.kid.nickname || data?.kid.name)}
+          title=""
+          amountCents={data?.balanceCents ?? 0}
+          amountLabel="Your stash"
+          amountSize={56}
+          subtitle={
+            doing.length > 0
+              ? `In progress: ${doing.map((t) => t.title).join(' · ')}`
+              : undefined
+          }
           pose={data?.kid.mascotPose ?? HERO_POSE.kidHome}
-          milestone={milestone}
-          onMilestoneClick={() => navigate(`/kid/${kidId}/goals`)}
           action={
             data && (
               <button
@@ -86,112 +68,114 @@ export function KidHome() {
                 onClick={() => navigate(`/profile/${kidId}`)}
                 className="pressable rounded-full"
               >
-                <Avatar initial={data.kid.initial} color={data.kid.avatarColor} size={40} />
+                <Avatar
+                  initial={data.kid.initial}
+                  color={data.kid.avatarColor}
+                  image={data.kid.avatarUrl}
+                  size={40}
+                />
               </button>
             )
           }
-        >
-          {data && <Money cents={data.balanceCents} size={40} tone="onGreen" className="pt-0.5" />}
-        </Hero>
+        />
       }
     >
-      {isPending && <Spinner onGreen />}
-      {isError && <ScreenMessage onGreen>{(error as Error).message}</ScreenMessage>}
+      {isPending && <Spinner />}
+      {isError && <ScreenMessage>{(error as Error).message}</ScreenMessage>}
 
       {data && (
-        <div className="scroll-y animate-fade -mx-1 flex flex-1 flex-col gap-5 px-6 pt-4 pb-5 [&>*]:shrink-0">
-          {/* In progress · To do · Waiting, right under the header. */}
-          <div className="flex gap-2">
-            <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>
-              All
-            </FilterChip>
-            <FilterChip active={filter === 'todo'} onClick={() => setFilter('todo')}>
-              To do{open.length > 0 && ` · ${open.length}`}
-            </FilterChip>
-            <FilterChip active={filter === 'doing'} onClick={() => setFilter('doing')}>
-              In progress{doing.length > 0 && ` · ${doing.length}`}
-            </FilterChip>
-            <FilterChip active={filter === 'waiting'} onClick={() => setFilter('waiting')}>
-              Waiting
-            </FilterChip>
-          </div>
-
-          <DailyThree done={data.dailyGoal.done} target={data.dailyGoal.target} />
-
-          {milestone?.nudge && (
-            <div className="bg-gold rounded-card text-mustache px-4 py-3 text-center text-[15px] font-bold">
-              {milestone.nudge}
+        <div className="scroll-y animate-fade -mx-1 flex flex-1 flex-col gap-5 px-6 pt-5 pb-4 [&>*]:shrink-0">
+          {/*
+            Only when something is pending — and deliberately not a button.
+            Chasing approvals is not this screen's job.
+          */}
+          {pendingIn.length > 0 && (
+            <div className="bg-surface rounded-inset flex items-center justify-between px-4 py-3 shadow-[var(--shadow-card)]">
+              <span className="text-mustache text-[14px] font-bold">Waiting on a parent</span>
+              <span className="text-mustache/70 text-[13px]">
+                {pendingIn.length} achievement{pendingIn.length === 1 ? '' : 's'} ·{' '}
+                {money(pendingIn.reduce((s, r) => s + r.amountCents, 0))}
+              </span>
             </div>
           )}
 
-          {/*
-            Nothing to save for, but a parent has put something up — point at it
-            rather than showing the generic "no goals yet" line.
-          */}
-          {!data.goal && data.suggestions.some((s) => s.adoptedGoalId === null) && (
+          <EarningsBlock
+            win={win}
+            window={window_}
+            onWindow={setWindow}
+            loading={earnings.isPending}
+          />
+
+          {data.goal && (
             <button
               type="button"
-              onClick={() => navigate(`/kid/${kidId}/stuff`)}
-              className="pressable bg-surface rounded-card flex items-center gap-3 px-4 py-3.5 text-left shadow-[var(--shadow-card)]"
+              onClick={() => navigate(`/kid/${kidId}/goals`)}
+              className="pressable bg-surface rounded-card flex items-center gap-3 p-4 text-left shadow-[var(--shadow-card)]"
             >
-              <ChoreIconBadge icon="sparkle" tone="gold" size={38} />
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="display text-chestnut text-[16px] leading-tight font-bold">
-                  {data.approverName} put something up
+              {data.goal.image ? (
+                <img
+                  src={data.goal.image}
+                  alt=""
+                  className="h-12 w-12 shrink-0 rounded-xl object-cover"
+                />
+              ) : null}
+              <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <span className="flex items-baseline justify-between gap-2">
+                  <span className="display text-chestnut truncate text-[16px] leading-tight font-bold">
+                    {data.goal.title}
+                  </span>
+                  <span className="text-mustache/70 shrink-0 text-[12px] font-bold">
+                    {money(data.goal.remainingCents)} to go
+                  </span>
                 </span>
-                <span className="text-mustache/65 text-[13px] leading-tight">
-                  Things they&rsquo;d go halves on — pick one to save for.
-                </span>
+                <ProgressBar pct={data.goal.progressPct} />
+                {/* The "only" voice is earned at 80%; below that the bar speaks alone. */}
+                {data.goal.progressPct >= 80 && data.goal.progressPct < 100 && (
+                  <span className="text-leaf-deep text-[12px] font-bold">
+                    Only {money(data.goal.remainingCents)} to go!
+                  </span>
+                )}
               </span>
             </button>
           )}
 
-          {doing.length > 0 && (filter === 'all' || filter === 'doing') && (
+          {recent.length > 0 && (
             <section className="flex flex-col gap-2.5">
-              <Eyebrow onGreen>In progress</Eyebrow>
-              <TaskGrid>{doing.map(tile)}</TaskGrid>
-            </section>
-          )}
-
-          {(filter === 'all' || filter === 'todo') && (
-            <section className="flex flex-col gap-2.5">
-              <div className="flex items-baseline justify-between">
-                <Eyebrow onGreen>Things to do</Eyebrow>
-                <span className="text-[13px] font-bold text-white/85">
-                  {open.length > 0 ? `${open.length} to go · ${money(data.remainingCents)}` : 'All done!'}
-                </span>
+              <Eyebrow>Recent activity</Eyebrow>
+              <div className="bg-surface rounded-card flex flex-col shadow-[var(--shadow-card)]">
+                {recent.map((entry, i) => (
+                  <div
+                    key={entry.id}
+                    className={cx(
+                      'flex items-center gap-3 px-4 py-3',
+                      i > 0 && 'border-line-cream border-t',
+                    )}
+                  >
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <span className="text-chestnut truncate text-[14px] leading-tight font-bold">
+                        {entry.title}
+                      </span>
+                      <span className="text-mustache/60 text-[11px] leading-tight">
+                        {money(entry.balanceAfterCents)} after
+                      </span>
+                    </div>
+                    <Money
+                      cents={entry.amountCents}
+                      size={17}
+                      tone={entry.amountCents < 0 ? 'spend' : 'leaf'}
+                      sign={entry.amountCents < 0 ? '−' : '+'}
+                    />
+                  </div>
+                ))}
               </div>
-              <TaskGrid>{(filter === 'todo' ? open : [...open, ...waiting]).map(tile)}</TaskGrid>
-              {open.length === 0 && waiting.length === 0 && (
-                <div className="rounded-card border-2 border-dashed border-white/40 px-4 py-8 text-center text-[15px] text-white/85">
-                  Nothing on the list right now.
-                </div>
-              )}
+              <SmallButton variant="quiet" onClick={() => navigate(`/kid/${kidId}/history`)}>
+                See every dollar
+              </SmallButton>
             </section>
           )}
 
-          {filter === 'waiting' && (
-            <section className="flex flex-col gap-2.5">
-              <Eyebrow onGreen>Finished, waiting on a parent</Eyebrow>
-              {waiting.length > 0 ? (
-                <TaskGrid>{waiting.map(tile)}</TaskGrid>
-              ) : (
-                <div className="rounded-card border-2 border-dashed border-white/40 px-4 py-8 text-center text-[15px] text-white/85">
-                  Nothing waiting — everything&rsquo;s been looked at.
-                </div>
-              )}
-            </section>
-          )}
-
-          {/* Money waiting on a parent lives at the bottom, with the nudge. */}
-          <OutstandingRequests requests={data.requests} onGreen />
-          {data.requests.length > 0 && (
-            <ReminderCard
-              kidId={kidId}
-              approverName={data.approverName}
-              remaining={data.remindersLeftToday}
-            />
-          )}
+          {/* The screen's one pill, and it points at the doing. */}
+          <Button onClick={() => navigate(`/kid/${kidId}/tasks`)}>Find something to do</Button>
         </div>
       )}
 
@@ -200,118 +184,87 @@ export function KidHome() {
   )
 }
 
-function FilterChip({
-  active,
-  onClick,
-  children,
+/* ------------------------------------------------------------- earnings --- */
+
+function EarningsBlock({
+  win,
+  window,
+  onWindow,
+  loading,
 }: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
+  win: EarningsWindow | undefined
+  window: 'seven' | 'thirty'
+  onWindow: (w: 'seven' | 'thirty') => void
+  loading: boolean
 }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cx(
-        'pressable rounded-full px-3.5 py-2 text-[13px] font-bold whitespace-nowrap transition-colors',
-        active ? 'text-leaf-deep bg-white' : 'bg-white/15 text-white hover:bg-white/25',
-      )}
-    >
-      {children}
-    </button>
-  )
-}
-
-/**
- * Three a day keeps the stash growing. A rhythm, not a rule — the dots fill
- * gold as tasks land, and nothing is withheld for missing it.
- */
-function DailyThree({ done, target }: { done: number; target: number }) {
-  const hit = done >= target
-  return (
-    <div className="rounded-card flex items-center gap-3 bg-white/12 px-4 py-3">
-      <div className="flex gap-1.5">
-        {Array.from({ length: target }, (_, i) => (
-          <span
-            key={i}
-            className={cx(
-              'h-3.5 w-3.5 rounded-full transition-colors',
-              i < done ? 'bg-gold' : 'bg-white/25',
-            )}
-          />
-        ))}
-      </div>
-      <span className={cx('text-[14px] leading-tight font-bold', hit ? 'text-gold' : 'text-white')}>
-        {hit
-          ? `That's today's ${target}. Anything now is extra.`
-          : `${done} of ${target} today — ${target - done} more to hit your rhythm.`}
-      </span>
-    </div>
-  )
-}
-
-/** Stash carries the message: twice a day, the kid can send him to nudge. */
-function ReminderCard({
-  kidId,
-  approverName,
-  remaining,
-}: {
-  kidId: number
-  approverName: string
-  remaining: number
-}) {
-  const [sent, setSent] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const send = useMutation({
-    mutationFn: () => api.sendReminder(kidId),
-    onSuccess: () => setSent(true),
-    onError: (err: Error) => setError(err.message),
-  })
-
-  const out = remaining <= 0 && !sent
+  const label = window === 'seven' ? 'Earned in the last 7 days' : 'Earned in the last 30 days'
+  const max = Math.max(1, ...(win?.buckets.map((b) => b.cents) ?? [1]))
+  const gain = win && win.prevTotalCents !== null && win.totalCents > win.prevTotalCents
+    ? win.totalCents - win.prevTotalCents
+    : null
 
   return (
-    <div className="rounded-card flex items-center gap-3 bg-white/12 px-4 py-3.5">
-      <Mascot pose="coin-toss-alt" height={64} />
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        {sent ? (
-          <span className="text-[14px] leading-snug font-bold text-white">
-            Stash is on his way to {approverName}.
-          </span>
-        ) : out ? (
-          <span className="text-[14px] leading-snug text-white/85">
-            Stash already went twice today — he heads out again tomorrow.
-          </span>
-        ) : (
-          <>
-            <span className="text-[14px] leading-snug font-bold text-white">
-              {approverName} hasn&rsquo;t looked yet.
-            </span>
+    <section className="bg-surface rounded-card flex flex-col gap-3 p-4 shadow-[var(--shadow-card)]">
+      <div className="flex items-center justify-between">
+        <Eyebrow>{label}</Eyebrow>
+        <div className="bg-cream flex rounded-full p-0.5">
+          {(['seven', 'thirty'] as const).map((w) => (
             <button
+              key={w}
               type="button"
-              disabled={send.isPending}
-              onClick={() => send.mutate()}
-              className="pressable display text-leaf-deep inline-flex w-fit items-center rounded-full bg-white px-4 py-2 text-[14px] font-bold disabled:opacity-45"
+              aria-pressed={window === w}
+              onClick={() => onWindow(w)}
+              className={cx(
+                'rounded-full px-3 py-1 text-[11px] font-bold tracking-[0.08em] uppercase transition-colors',
+                window === w ? 'bg-leaf text-white' : 'text-mustache/60',
+              )}
             >
-              Send Stash to remind {approverName}
+              {w === 'seven' ? '7 days' : '30 days'}
             </button>
-            <span className="text-[11px] text-white/70">
-              {remaining} nudge{remaining === 1 ? '' : 's'} left today
-            </span>
-          </>
-        )}
-        {error && <span className="text-[12px] font-bold text-white">{error}</span>}
+          ))}
+        </div>
       </div>
-    </div>
+
+      {loading && <Spinner />}
+
+      {win && win.totalCents === 0 && (
+        <p className="text-mustache/70 py-3 text-center text-[14px]">
+          Nothing yet this {window === 'seven' ? 'week' : 'month'} — your stash is waiting.
+        </p>
+      )}
+
+      {win && win.totalCents > 0 && (
+        <>
+          <Money cents={win.totalCents} size={34} tone="leaf" sign="+" />
+
+          {/* Read-only decoration that happens to be true: no axes, no tooltips. */}
+          <div className="flex items-end gap-1.5" aria-hidden>
+            {win.buckets.map((b, i) => (
+              <div key={i} className="flex flex-1 flex-col items-center gap-1">
+                <div className="flex h-16 w-full items-end">
+                  <div
+                    className="bg-leaf w-full rounded-t-md"
+                    style={{ height: `${Math.max(b.cents > 0 ? 10 : 3, (b.cents / max) * 100)}%` }}
+                  />
+                </div>
+                <span className="text-mustache/45 text-[9px] font-bold">{b.label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Comparison only when it's genuinely good news. Never "+0%". */}
+          {gain !== null && gain > 0 && (
+            <p className="text-mustache/70 text-[13px]">
+              {money(gain)} more than the {window === 'seven' ? 'week' : 'month'} before.
+            </p>
+          )}
+        </>
+      )}
+    </section>
   )
 }
 
-function greeting(): string {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 18) return 'Good afternoon'
-  return 'Good evening'
+function greeting(doneToday: number, name?: string): string {
+  if (!name) return 'Hi'
+  return doneToday > 0 ? `Nice work, ${name}!` : `Hi, ${name}`
 }

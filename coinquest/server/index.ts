@@ -10,6 +10,8 @@ import { familyRoutes } from './routes/family.ts'
 import { goalRoutes } from './routes/goals.ts'
 import { goodStuffRoutes } from './routes/goodStuff.ts'
 import { kidRoutes } from './routes/kids.ts'
+import { mediaRoutes, purgeExpiredMedia } from './routes/media.ts'
+import { convertLegacyImages } from './routes/legacyImages.ts'
 import { moneyRoutes } from './routes/money.ts'
 import { reminderRoutes } from './routes/reminders.ts'
 import { taskRoutes } from './routes/tasks.ts'
@@ -18,6 +20,18 @@ import { ensureSeed } from './seed.ts'
 
 await migrate()
 await ensureSeed()
+await convertLegacyImages()
+
+/*
+ * Proof photos age out 30 days after approval (§B6). Swept on boot and every
+ * six hours after — a purge job that only runs at midnight never runs on a
+ * host that restarts daily.
+ */
+purgeExpiredMedia().catch((err) => console.error('media purge failed:', err))
+setInterval(
+  () => purgeExpiredMedia().catch((err) => console.error('media purge failed:', err)),
+  6 * 60 * 60 * 1000,
+)
 
 const app = new Hono()
 
@@ -38,6 +52,7 @@ api.route('/goals', goalRoutes)
 api.route('/good-stuff', goodStuffRoutes)
 api.route('/money', moneyRoutes)
 api.route('/reminders', reminderRoutes)
+api.route('/media', mediaRoutes)
 api.route('/approvals', approvalRoutes)
 api.route('/', taskRoutes)
 

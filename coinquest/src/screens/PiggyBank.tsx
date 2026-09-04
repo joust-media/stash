@@ -7,6 +7,8 @@ import { MINUS, money } from '../lib/format'
 import { Hero } from '../components/Hero'
 import { HERO_POSE } from '../components/Mascot'
 import { Money } from '../components/Money'
+import { PhotoInput, type UploadedPhoto } from '../components/PhotoInput'
+import { ReminderCard } from '../components/Reminder'
 import { OutstandingRequests, TaskGrid, TaskTile } from '../components/TaskTile'
 import {
   Button,
@@ -166,6 +168,14 @@ function IdleView({
       </div>
 
       <OutstandingRequests requests={home.requests} onGreen />
+      {home.requests.length > 0 && (
+        <ReminderCard
+          kidId={home.kid.id}
+          approverName={home.approverName}
+          remaining={home.remindersLeftToday}
+          onGreen
+        />
+      )}
 
       <SmallButton variant="quiet" className="border-white/30 text-white" onClick={() => onHistory()}>
         See every dollar
@@ -237,6 +247,7 @@ function SpendView({
 }) {
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState(CATEGORIES[0])
+  const [photo, setPhoto] = useState<UploadedPhoto | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const cents = Math.round(Number(amount || 0) * 100)
@@ -246,7 +257,8 @@ function SpendView({
     goal && cents > 0 ? Math.max(0, Math.round(((balanceCents - cents) / goal.targetCents) * 100)) : null
 
   const request = useMutation({
-    mutationFn: () => api.requestWithdrawal({ kidId, amountCents: cents, category }),
+    mutationFn: () =>
+      api.requestWithdrawal({ kidId, amountCents: cents, category, imageMediaId: photo?.id ?? null }),
     onError: (err: Error) => setError(err.message),
     onSuccess: onDone,
   })
@@ -295,6 +307,11 @@ function SpendView({
               </ChoiceChip>
             ))}
           </div>
+        </div>
+
+        <div className="flex flex-col gap-2.5">
+          <Eyebrow onGreen>Show what it&rsquo;s for (optional)</Eyebrow>
+          <PhotoInput actorId={kidId} value={photo} onChange={setPhoto} onGreen label="Add a photo" />
         </div>
 
         {goalAfterPct !== null && goal && (

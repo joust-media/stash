@@ -107,9 +107,10 @@ export interface UserRow {
 
 const POSES: Pose[] = ['coin-toss', 'coin-toss-alt', 'nut-pile', 'confetti', 'acorn-hug']
 
-export function toPerson(row: UserRow): Person {
+export function toPerson(row: UserRow & { avatar_media_id?: number | null }): Person {
   const pose = POSES.includes(row.mascot_pose as Pose) ? (row.mascot_pose as Pose) : null
   return {
+    avatarUrl: row.avatar_media_id ? `/api/media/${row.avatar_media_id}/thumb` : null,
     id: Number(row.id),
     familyId: Number(row.family_id),
     name: row.name,
@@ -215,6 +216,7 @@ interface GoalRowShape {
   claim_settled?: number
   claim_pending?: number
   image?: string | null
+  image_media_id?: number | null
 }
 
 export function toGoal(row: GoalRowShape, balanceCents: number): Goal {
@@ -229,7 +231,7 @@ export function toGoal(row: GoalRowShape, balanceCents: number): Goal {
     progressPct: Math.min(100, Math.round((balanceCents / target) * 100)),
     active: Boolean(row.active),
     icon: row.icon ?? null,
-    image: row.image ?? null,
+    image: row.image_media_id ? `/api/media/${row.image_media_id}` : (row.image ?? null),
     remainingCents: Math.max(0, target - balanceCents),
     suggestedItemId: row.suggested_item_id == null ? null : Number(row.suggested_item_id),
     matchPercent: row.match_percent_locked == null ? null : Number(row.match_percent_locked),

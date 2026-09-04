@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { ApprovalItem } from '../../shared/types'
 import { api } from '../lib/api'
@@ -28,6 +29,7 @@ import {
 export function Approvals() {
   const queryClient = useQueryClient()
   const { parent } = useSession()
+  const [viewing, setViewing] = useState<ApprovalItem | null>(null)
 
   const { data, isPending, isError, error } = useQuery({ queryKey: ['approvals'], queryFn: api.approvals })
 
@@ -106,7 +108,23 @@ export function Approvals() {
             return (
               <Card key={`${item.kind}-${item.id}`} className="flex flex-col gap-3.5 p-4">
                 <div className="flex items-center gap-3">
-                  <Avatar initial={item.kid.initial} color={item.kid.avatarColor} size={42} />
+                  {/* Proof photo, when the achievement asked for one. */}
+                  {item.proofThumbUrl ? (
+                    <button
+                      type="button"
+                      aria-label="See the photo"
+                      onClick={() => setViewing(item)}
+                      className="pressable shrink-0"
+                    >
+                      <img
+                        src={item.proofThumbUrl}
+                        alt=""
+                        className="h-14 w-14 rounded-xl object-cover shadow-[var(--shadow-card)]"
+                      />
+                    </button>
+                  ) : (
+                    <Avatar initial={item.kid.initial} color={item.kid.avatarColor} size={42} />
+                  )}
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <span className="display text-chestnut truncate text-[18px] leading-tight font-bold">
                       {item.title}
@@ -175,6 +193,31 @@ export function Approvals() {
           <Button variant="reward" disabled={approveAll.isPending} onClick={() => approveAll.mutate()}>
             Approve {achievements.length} · pay {money(data.payoutCents)}
           </Button>
+        </div>
+      )}
+
+      {/* Full-screen proof viewer: the photo, who, what, how much, when. */}
+      {viewing && (
+        <div
+          className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/85 px-6 py-10"
+          role="dialog"
+          aria-modal
+          onClick={() => setViewing(null)}
+        >
+          <img
+            src={viewing.proofUrl ?? undefined}
+            alt={`Photo for ${viewing.title}`}
+            className="max-h-[60%] w-full rounded-2xl object-contain"
+          />
+          <div className="flex flex-col items-center gap-1 text-center">
+            <span className="display text-[20px] font-extrabold text-white">{viewing.title}</span>
+            <span className="text-[14px] text-white/80">
+              {viewing.kid.name} · {money(viewing.amountCents)} · {viewing.timeLabel}
+            </span>
+          </div>
+          <SmallButton variant="quiet" className="border-white/40 text-white" onClick={() => setViewing(null)}>
+            Close
+          </SmallButton>
         </div>
       )}
 

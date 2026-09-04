@@ -216,13 +216,26 @@ export function Avatar({
   color,
   size = 44,
   ring,
+  image,
 }: {
   initial: string
   color: string
   size?: number
   /** 3px white ring for overlapping stacks. */
   ring?: boolean
+  /** A real photo replaces the initial disc entirely. */
+  image?: string | null
 }) {
+  if (image) {
+    return (
+      <img
+        src={image}
+        alt=""
+        className={cx('shrink-0 rounded-full object-cover', ring && 'ring-3 ring-white')}
+        style={{ width: size, height: size }}
+      />
+    )
+  }
   return (
     <div
       className="display flex shrink-0 items-center justify-center rounded-full font-extrabold"

@@ -37,7 +37,7 @@ approvalRoutes.get('/', async (c) => {
 
   const [completions, withdrawals, nudges] = await Promise.all([
     all(
-      `SELECT tc.id, tc.completed_at, ch.title, ch.reward_cents, ${USER_COLUMNS}
+      `SELECT tc.id, tc.completed_at, tc.proof_media_id, ch.title, ch.reward_cents, ${USER_COLUMNS}
          FROM task_completions tc
          JOIN chores ch ON ch.id = tc.chore_id
          JOIN users  u  ON u.id  = tc.kid_id
@@ -73,6 +73,8 @@ approvalRoutes.get('/', async (c) => {
       at: iso(r.completed_at),
       timeLabel: timeLabel(r.completed_at),
       note: null,
+      proofThumbUrl: r.proof_media_id ? `/api/media/${r.proof_media_id}/thumb` : null,
+      proofUrl: r.proof_media_id ? `/api/media/${r.proof_media_id}` : null,
     })),
     ...withdrawals.map((r) => ({
       kind: 'withdrawal' as const,
@@ -115,6 +117,13 @@ async function approveAchievement(conn: PoolConnection, completionId: number, pa
   await conn.query(
     `UPDATE task_completions SET status = 'approved', reviewed_by = ?, reviewed_at = ? WHERE id = ?`,
     [parentId, at, row.id],
+  )
+  // The proof photo's job ends here. Thirty days of grace, then the sweep.
+  await conn.query(
+    `UPDATE media m JOIN task_completions tc ON tc.proof_media_id = m.id
+        SET m.purge_after = DATE_ADD(?, INTERVAL 30 DAY)
+      WHERE tc.id = ?`,
+    [at, row.id],
   )
   await insertTransaction(
     {

@@ -31,6 +31,8 @@ export function Hero({
   eyebrow,
   title,
   amountCents,
+  amountLabel,
+  amountSize = 52,
   subtitle,
   pose,
   milestone,
@@ -44,6 +46,10 @@ export function Hero({
   title: ReactNode
   /** Leads with the amount instead of the title — the balance is the headline. */
   amountCents?: number
+  /** Tiny all-caps label directly above the amount: "YOUR STASH". */
+  amountLabel?: ReactNode
+  /** Dollar size for the amount. Home passes the largest type in the app. */
+  amountSize?: number
   subtitle?: ReactNode
   pose: Pose
   /** Renders the one thing being worked towards, as a labelled bar. */
@@ -123,7 +129,14 @@ export function Hero({
               {title}
             </h1>
           ) : (
-            <Money cents={amountCents} size={52} tone="onGreen" className="-my-0.5" />
+            <>
+              {amountLabel && (
+                <span className="text-[11px] font-bold tracking-[0.14em] text-white/80 uppercase">
+                  {amountLabel}
+                </span>
+              )}
+              <Money cents={amountCents} size={amountSize} tone="onGreen" className="-my-0.5" />
+            </>
           )}
           {subtitle && (
             <p className="line-clamp-2 w-full text-[13px] leading-snug text-white/85">{subtitle}</p>

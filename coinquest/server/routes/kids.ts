@@ -37,8 +37,10 @@ kidRoutes.get('/:id/home', async (c) => {
 
   const rows = await all(
     `SELECT c.id, c.title, c.reward_cents, c.schedule, c.schedule_detail, c.icon, c.description,
+            c.photo_proof, f.photo_proof_enabled,
             tc.id AS completion_id, tc.status, tc.started_at
        FROM chores c
+       JOIN families f ON f.id = c.family_id
        JOIN chore_assignments ca ON ca.chore_id = c.id AND ca.kid_id = ?
        LEFT JOIN task_completions tc
               ON tc.chore_id = c.id AND tc.kid_id = ca.kid_id AND tc.status <> 'rejected'
@@ -59,6 +61,8 @@ kidRoutes.get('/:id/home', async (c) => {
       scheduleLabel: scheduleLabel(r.schedule, r.schedule_detail),
       icon: r.icon ?? null,
       description: (r.description as string | null) ?? null,
+      // Resolved against the family switch here, so screens never re-derive it.
+      photoProof: (r.photo_proof_enabled ? (r.photo_proof ?? 'off') : 'off') as TaskRow['photoProof'],
       completionId: r.completion_id === null ? null : Number(r.completion_id),
       status: r.status ?? null,
       startedAt: r.started_at ? iso(r.started_at) : null,
@@ -148,6 +152,69 @@ kidRoutes.get('/:id/home', async (c) => {
     remindersLeftToday: Math.max(0, REMINDERS_PER_DAY - (await remindersUsedToday(kid.id))),
   }
   return c.json(payload)
+})
+
+/**
+ * GET /api/kids/:id/earnings — what Home's chart draws. Earn transactions
+ * only: deposits are not earnings and the chart never guilt-trips. Both
+ * windows come back at once so the 7D/30D toggle needs no refetch.
+ */
+kidRoutes.get('/:id/earnings', async (c) => {
+  const kid = await requireKid(Number(c.req.param('id')))
+
+  const dayStart = new Date()
+  dayStart.setHours(0, 0, 0, 0)
+  const daysAgo = (n: number) => new Date(dayStart.getTime() - n * 86_400_000)
+
+  /*
+   * Sixty days of raw earn rows, bucketed here in local time rather than in
+   * SQL — DATE() comes back through the driver as a Date object whose string
+   * form never matches a key you build yourself, and mixing the database's
+   * idea of "day" with this process's is how off-by-one bars happen.
+   */
+  const rows = await all<{ created_at: Date; amount_cents: number }>(
+    `SELECT created_at, amount_cents FROM transactions
+      WHERE kid_id = ? AND type = 'earn' AND created_at >= ?`,
+    [kid.id, daysAgo(59)],
+  )
+  const localDay = (d: Date) => d.toLocaleDateString('en-CA')
+  const byDay = new Map<string, number>()
+  for (const r of rows) {
+    const key = localDay(new Date(r.created_at))
+    byDay.set(key, (byDay.get(key) ?? 0) + Number(r.amount_cents))
+  }
+  const centsOn = (date: Date) => byDay.get(localDay(date)) ?? 0
+  const centsBetween = (from: Date, until: Date) => {
+    let sum = 0
+    for (let t = from.getTime(); t < until.getTime(); t += 86_400_000) sum += centsOn(new Date(t))
+    return sum
+  }
+
+  const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+  const seven = {
+    buckets: Array.from({ length: 7 }, (_, i) => {
+      const date = daysAgo(6 - i)
+      return { label: DAY_LETTERS[date.getDay()], cents: centsOn(date) }
+    }),
+    totalCents: centsBetween(daysAgo(6), daysAgo(-1)),
+    prevTotalCents: null as number | null,
+  }
+  const prevSeven = centsBetween(daysAgo(13), daysAgo(6))
+  seven.prevTotalCents = prevSeven > 0 ? prevSeven : null
+
+  // 30 days as five week-buckets, oldest first.
+  const thirty = {
+    buckets: Array.from({ length: 5 }, (_, i) => ({
+      label: `W${i + 1}`,
+      cents: centsBetween(daysAgo(29 - i * 6), daysAgo(Math.max(-1, 29 - i * 6 - 6))),
+    })),
+    totalCents: centsBetween(daysAgo(29), daysAgo(-1)),
+    prevTotalCents: null as number | null,
+  }
+  const prevThirty = centsBetween(daysAgo(59), daysAgo(29))
+  thirty.prevTotalCents = prevThirty > 0 ? prevThirty : null
+
+  return c.json({ seven, thirty })
 })
 
 const FILTERS: Record<string, TxType | null> = {

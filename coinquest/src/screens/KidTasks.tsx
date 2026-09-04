@@ -2,10 +2,11 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { money } from '../lib/format'
-import { useCancelTask, useEndTask } from '../components/TaskList'
+import { useCancelTask, useFinishTask } from '../components/TaskList'
 import { TaskGrid, TaskTile } from '../components/TaskTile'
 import { Hero } from '../components/Hero'
 import { HERO_POSE } from '../components/Mascot'
+import { DailyThree } from '../components/Reminder'
 import { Eyebrow, KID_TABS, Screen, ScreenMessage, Spinner, TabBar } from '../components/ui'
 
 /** Achievements — one rung at a time, with everything that counts towards it. */
@@ -16,7 +17,7 @@ export function KidTasks() {
     queryKey: ['kidHome', kidId],
     queryFn: () => api.kidHome(kidId),
   })
-  const end = useEndTask(kidId)
+  const end = useFinishTask(kidId)
   const cancel = useCancelTask(kidId)
 
   // Anything running comes first — it is the one thing needing a decision.
@@ -46,6 +47,8 @@ export function KidTasks() {
 
       {data && (
         <div className="scroll-y animate-fade -mx-1 flex flex-1 flex-col gap-5 px-6 pt-5 pb-5 [&>*]:shrink-0">
+          <DailyThree done={data.dailyGoal.done} target={data.dailyGoal.target} />
+
           {data.achievement.nudge && (
             <div className="bg-gold/20 rounded-card text-chestnut px-4 py-3 text-center text-[15px] font-bold">
               {data.achievement.nudge}
@@ -60,7 +63,7 @@ export function KidTasks() {
                   <TaskTile
                     key={task.choreId}
                     task={task}
-                    onEnd={end.mutate}
+                    onEnd={end.finish}
                     onCancel={cancel.mutate}
                     busy={end.isPending && end.variables?.choreId === task.choreId}
                   />
@@ -78,7 +81,7 @@ export function KidTasks() {
                     key={task.choreId}
                     task={task}
                     onClick={(t) => navigate(`/kid/${kidId}/task/${t.choreId}`)}
-                    onEnd={end.mutate}
+                    onEnd={end.finish}
                     onCancel={cancel.mutate}
                     busy={end.isPending && end.variables?.choreId === task.choreId}
                   />

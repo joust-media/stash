@@ -45,7 +45,7 @@ approvalRoutes.get('/', async (c) => {
         ORDER BY tc.completed_at DESC`,
     ),
     all(
-      `SELECT w.id, w.amount_cents, w.category, w.note, w.requested_at, w.goal_id,
+      `SELECT w.id, w.amount_cents, w.category, w.note, w.requested_at, w.goal_id, w.kind,
               g.match_amount_cents, ${USER_COLUMNS}
          FROM withdrawal_requests w
          JOIN users u ON u.id = w.kid_id
@@ -77,18 +77,25 @@ approvalRoutes.get('/', async (c) => {
       proofUrl: r.proof_media_id ? `/api/media/${r.proof_media_id}` : null,
     })),
     ...withdrawals.map((r) => ({
-      kind: 'withdrawal' as const,
+      kind: (r.kind === 'deposit' ? 'deposit' : 'withdrawal') as 'deposit' | 'withdrawal',
       id: Number(r.id),
       kid: personFrom(r),
-      title: r.category as string,
-      amountCents: -Number(r.amount_cents),
+      title: r.kind === 'deposit' ? 'Cash handed over' : (r.category as string),
+      amountCents: (r.kind === 'deposit' ? 1 : -1) * Number(r.amount_cents),
       at: iso(r.requested_at),
       timeLabel: timeLabel(r.requested_at),
       note: (r.note as string | null) ?? null,
-      // A Good Stuff claim carries what the parent committed to covering.
       matchAmountCents: r.match_amount_cents == null ? null : Number(r.match_amount_cents),
     })),
-  ].sort((a, b) => b.at.localeCompare(a.at))
+  ].sort((a, b) => {
+    /*
+     * Cash-in-hand jumps the queue. A kid who handed over real money is
+     * trusting a parent to make it exist in the app — that is not a
+     * whenever-you-get-to-it item, it sits on top until it is done.
+     */
+    if ((a.kind === 'deposit') !== (b.kind === 'deposit')) return a.kind === 'deposit' ? -1 : 1
+    return b.at.localeCompare(a.at)
+  })
 
   const payload: ApprovalsPayload = {
     items,
@@ -97,6 +104,7 @@ approvalRoutes.get('/', async (c) => {
     withdrawalCents: items
       .filter((i) => i.kind === 'withdrawal')
       .reduce((s, i) => s + Math.abs(i.amountCents), 0),
+    depositCents: items.filter((i) => i.kind === 'deposit').reduce((s, i) => s + i.amountCents, 0),
   }
   return c.json(payload)
 })
@@ -139,20 +147,24 @@ async function approveAchievement(conn: PoolConnection, completionId: number, pa
   return Number(row.reward_cents)
 }
 
-/** Confirming a withdrawal is the moment the cash actually leaves the stash. */
+/**
+ * Confirming a cash request is the moment money actually moves — out of the
+ * stash for a withdrawal, into it for cash the kid already handed over.
+ */
 async function approveWithdrawal(conn: PoolConnection, requestId: number, parentId: number) {
   const [rows] = await conn.query(`SELECT * FROM withdrawal_requests WHERE id = ? FOR UPDATE`, [requestId])
   const row = (rows as Record<string, any>[])[0]
   if (!row) throw new HttpError(404, 'That request does not exist')
   if (row.status !== 'pending') throw new HttpError(409, 'Already handled')
 
+  const isDeposit = row.kind === 'deposit'
   const t = await insertTransaction(
     {
       kidId: Number(row.kid_id),
-      type: 'withdraw',
-      amountCents: -Number(row.amount_cents),
-      category: row.category,
-      note: row.note,
+      type: isDeposit ? 'deposit' : 'withdraw',
+      amountCents: (isDeposit ? 1 : -1) * Number(row.amount_cents),
+      category: isDeposit ? null : row.category,
+      note: isDeposit ? (row.note || 'Cash handed over') : row.note,
       // Only the kid's share ever moves. The parent's match is not a
       // transaction and never enters the balance — it is not money the kid has.
       goalId: row.goal_id == null ? null : Number(row.goal_id),
@@ -199,7 +211,7 @@ approvalRoutes.post('/:kind/:id/approve', async (c) => {
     const paidCents = await tx((conn) => approveAchievement(conn, id, parent.id))
     return c.json({ paidCents })
   }
-  if (kind === 'withdrawal') {
+  if (kind === 'withdrawal' || kind === 'deposit') {
     const handedOverCents = await tx((conn) => approveWithdrawal(conn, id, parent.id))
     return c.json({ handedOverCents })
   }
@@ -226,7 +238,7 @@ approvalRoutes.post('/:kind/:id/reject', async (c) => {
     return c.json({ ok: true })
   }
 
-  if (kind === 'withdrawal') {
+  if (kind === 'withdrawal' || kind === 'deposit') {
     const result = await tx(async (conn) => {
       const [r] = await conn.query(
         `UPDATE withdrawal_requests SET status = 'declined', confirmed_by = ?, confirmed_at = ?

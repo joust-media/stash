@@ -170,6 +170,8 @@ export const api = {
     }
     return (await res.json()) as { id: number; width: number; height: number; url: string; thumbUrl: string }
   },
+  requestDeposit: (input: { kidId: number; amountCents: number; note?: string; imageMediaId?: number | null }) =>
+    send<{ id: number }>('POST', '/money/deposit-requests', input),
   setFamilySettings: (input: { parentId: number; photoProofEnabled: boolean }) =>
     send<{ ok: true }>('PATCH', '/family/settings', input),
   allGoodStuff: () => request<SuggestedItemRow[]>('/good-stuff/all'),

@@ -90,7 +90,7 @@ kidRoutes.get('/:id/home', async (c) => {
     ),
     one<{ n: number }>(
       `SELECT COALESCE(SUM(amount_cents), 0) AS n
-         FROM withdrawal_requests WHERE kid_id = ? AND status = 'pending'`,
+         FROM withdrawal_requests WHERE kid_id = ? AND status = 'pending' AND kind = 'withdraw'`,
       [kid.id],
     ),
     all(
@@ -101,7 +101,7 @@ kidRoutes.get('/:id/home', async (c) => {
       [kid.id],
     ),
     all(
-      `SELECT id, amount_cents, category, requested_at
+      `SELECT id, amount_cents, category, note, requested_at, kind
          FROM withdrawal_requests WHERE kid_id = ? AND status = 'pending'
         ORDER BY requested_at DESC`,
       [kid.id],
@@ -120,10 +120,11 @@ kidRoutes.get('/:id/home', async (c) => {
       timeLabel: timeLabel(r.completed_at),
     })),
     ...waitingCash.map((r) => ({
-      kind: 'withdrawal' as const,
+      kind: (r.kind === 'deposit' ? 'deposit' : 'withdrawal') as 'deposit' | 'withdrawal',
+      // Cash the kid physically handed over counts toward them, not against.
       id: Number(r.id),
-      title: r.category as string,
-      amountCents: -Number(r.amount_cents),
+      title: r.kind === 'deposit' ? ((r.note as string | null) || 'Cash handed over') : (r.category as string),
+      amountCents: r.kind === 'deposit' ? Number(r.amount_cents) : -Number(r.amount_cents),
       icon: null,
       at: iso(r.requested_at),
       timeLabel: timeLabel(r.requested_at),

@@ -13,6 +13,7 @@ import {
   Button,
   Card,
   Chip,
+  cx,
   PARENT_TABS,
   Screen,
   ScreenMessage,
@@ -105,8 +106,28 @@ export function Approvals() {
 
           {data.items.map((item) => {
             const isWithdrawal = item.kind === 'withdrawal'
+            const isDeposit = item.kind === 'deposit'
             return (
-              <Card key={`${item.kind}-${item.id}`} className="flex flex-col gap-3.5 p-4">
+              <Card
+                key={`${item.kind}-${item.id}`}
+                className={cx('flex flex-col gap-3.5 p-4', isDeposit && 'border-leaf border-2')}
+              >
+                {/*
+                  A kid handed over physical money and is trusting it to appear
+                  here. That is not a whenever item — it is pinned on top and
+                  it says so.
+                */}
+                {isDeposit && (
+                  <div className="bg-leaf/12 rounded-inset flex flex-col gap-0.5 px-4 py-3">
+                    <span className="display text-leaf-deep text-[15px] leading-snug font-extrabold">
+                      {item.kid.name} handed you {money(item.amountCents)} in cash
+                    </span>
+                    <span className="text-mustache text-[13px] leading-snug">
+                      {item.note ? `"${item.note}" — it` : 'It'}&rsquo;s in your hand, not their stash
+                      yet. Confirm it now so their number is right.
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center gap-3">
                   {/* Proof photo, when the achievement asked for one. */}
                   {item.proofThumbUrl ? (
@@ -135,6 +156,8 @@ export function Approvals() {
                   </div>
                   {isWithdrawal ? (
                     <Money cents={item.amountCents} size={24} tone="spend" sign={MINUS} />
+                  ) : isDeposit ? (
+                    <Money cents={item.amountCents} size={24} tone="leaf" sign="+" />
                   ) : (
                     <RewardBadge cents={item.amountCents} size={21} />
                   )}
@@ -168,14 +191,14 @@ export function Approvals() {
                     disabled={review.isPending}
                     onClick={() => review.mutate({ item, approve: true })}
                   >
-                    {isWithdrawal ? 'Handed over' : 'Approve'}
+                    {isWithdrawal ? 'Handed over' : isDeposit ? 'Got it — add it' : 'Approve'}
                   </SmallButton>
                   <SmallButton
                     variant="quiet"
                     disabled={review.isPending}
                     onClick={() => review.mutate({ item, approve: false })}
                   >
-                    {isWithdrawal ? 'Not now' : 'Send back'}
+                    {isWithdrawal || isDeposit ? 'Not now' : 'Send back'}
                   </SmallButton>
                 </div>
               </Card>

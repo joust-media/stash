@@ -349,6 +349,19 @@ const ADDED_COLUMNS: { table: string; column: string; definition: string }[] = [
   // The one-switch family opt-out: a parent who wants no photos says so once.
   { table: 'families', column: 'photo_proof_enabled', definition: 'TINYINT(1) NOT NULL DEFAULT 1' },
 
+  /*
+   * Cash requests flow both ways now: a kid can hand a parent real cash and
+   * ask for it to be added. Same table, a kind column — the deposit kind skips
+   * the balance check (there is no balance to check) and jumps the approvals
+   * queue, because a parent holding a kid's physical money is not a "whenever
+   * you get to it" item.
+   */
+  {
+    table: 'withdrawal_requests',
+    column: 'kind',
+    definition: `ENUM('withdraw','deposit') NOT NULL DEFAULT 'withdraw'`,
+  },
+
   // What finishing the task actually means — the criteria the kid agrees to
   // when they hit Start, shown full-screen before the task begins.
   { table: 'chores', column: 'description', definition: 'VARCHAR(240) NULL' },

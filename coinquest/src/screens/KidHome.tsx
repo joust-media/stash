@@ -3,12 +3,11 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { money } from '../lib/format'
-import { Hero } from '../components/Hero'
-import { HERO_POSE } from '../components/Mascot'
+import { ForestBackdrop } from '../components/ForestBackdrop'
+import { HERO_POSE, Mascot } from '../components/Mascot'
 import { Money } from '../components/Money'
 import {
   Avatar,
-  Button,
   Eyebrow,
   KID_TABS,
   ProgressBar,
@@ -16,6 +15,7 @@ import {
   ScreenMessage,
   SmallButton,
   Spinner,
+  StatusBar,
   TabBar,
   cx,
 } from '../components/ui'
@@ -48,43 +48,67 @@ export function KidHome() {
     <Screen
       tint={data?.kid.avatarColor}
       hero={
-        <Hero
-          eyebrow={greeting(data?.dailyGoal.done ?? 0, data?.kid.nickname || data?.kid.name)}
-          title=""
-          amountCents={data?.balanceCents ?? 0}
-          amountLabel="Your stash"
-          amountSize={56}
-          subtitle={
-            doing.length > 0
-              ? `In progress: ${doing.map((t) => t.title).join(' · ')}`
-              : undefined
-          }
-          pose={data?.kid.mascotPose ?? HERO_POSE.kidHome}
-          action={
-            data && (
-              <button
-                type="button"
-                aria-label="Edit profile"
-                onClick={() => navigate(`/profile/${kidId}`)}
-                className="pressable rounded-full"
-              >
-                <Avatar
-                  initial={data.kid.initial}
-                  color={data.kid.avatarColor}
-                  image={data.kid.avatarUrl}
-                  size={40}
-                />
-              </button>
-            )
-          }
-        />
+        /*
+         * Three quarters of the screen belongs to Stash and the number. This
+         * is the one place the balance gets to be enormous, dead centre, with
+         * nothing competing.
+         */
+        <ForestBackdrop className="relative h-[72%] shrink-0 rounded-b-[32px] shadow-[var(--shadow-card)]">
+          <StatusBar onGreen />
+          {data && (
+            <button
+              type="button"
+              aria-label="Edit profile"
+              onClick={() => navigate(`/profile/${kidId}`)}
+              className="pressable absolute top-12 right-5 z-10 rounded-full"
+            >
+              <Avatar
+                initial={data.kid.initial}
+                color={data.kid.avatarColor}
+                image={data.kid.avatarUrl}
+                size={40}
+              />
+            </button>
+          )}
+          <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 pb-4 text-center">
+            <Mascot pose={data?.kid.mascotPose ?? HERO_POSE.kidHome} height={190} />
+            <span className="display text-[20px] leading-tight font-bold text-white">
+              {greeting(data?.dailyGoal.done ?? 0, data?.kid.nickname || data?.kid.name)}
+            </span>
+            <span className="text-[12px] font-bold tracking-[0.16em] text-white/80 uppercase">
+              Your stash
+            </span>
+            <Money cents={data?.balanceCents ?? 0} size={76} tone="onGreen" className="-mt-1" />
+            {doing.length > 0 && (
+              <span className="line-clamp-1 max-w-full px-4 text-[13px] text-white/80">
+                In progress: {doing.map((t) => t.title).join(' · ')}
+              </span>
+            )}
+          </div>
+        </ForestBackdrop>
       }
     >
       {isPending && <Spinner />}
       {isError && <ScreenMessage>{(error as Error).message}</ScreenMessage>}
 
       {data && (
-        <div className="scroll-y animate-fade -mx-1 flex flex-1 flex-col gap-5 px-6 pt-5 pb-4 [&>*]:shrink-0">
+        <div className="scroll-y animate-fade -mx-1 flex flex-1 flex-col gap-5 px-6 pt-4 pb-4 [&>*]:shrink-0">
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => navigate(`/kid/${kidId}/tasks`)}
+              className="pressable display bg-leaf hover:bg-leaf-deep flex min-h-14 items-center justify-center rounded-full text-[18px] font-bold text-white shadow-[var(--shadow-button)]"
+            >
+              Earn
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(`/kid/${kidId}/bank`)}
+              className="pressable display border-leaf text-leaf-deep bg-surface flex min-h-14 items-center justify-center rounded-full border-2 text-[18px] font-bold shadow-[var(--shadow-card)]"
+            >
+              Stash
+            </button>
+          </div>
           {/*
             Only when something is pending — and deliberately not a button.
             Chasing approvals is not this screen's job.
@@ -174,8 +198,6 @@ export function KidHome() {
             </section>
           )}
 
-          {/* The screen's one pill, and it points at the doing. */}
-          <Button onClick={() => navigate(`/kid/${kidId}/tasks`)}>Find something to do</Button>
         </div>
       )}
 

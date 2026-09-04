@@ -212,7 +212,7 @@ export interface Ledger {
  * One item in the parent's approval queue. Nothing leaves or enters a stash
  * without a parent clearing one of these.
  */
-export type ApprovalKind = 'achievement' | 'withdrawal'
+export type ApprovalKind = 'achievement' | 'withdrawal' | 'deposit'
 
 export interface ApprovalItem {
   kind: ApprovalKind
@@ -237,6 +237,8 @@ export interface ApprovalsPayload {
   items: ApprovalItem[]
   /** Stash's visits today — kids who sent him to nudge. */
   reminders: { kidName: string; timeLabel: string }[]
+  /** Cash kids have physically handed over, waiting to be recorded. */
+  depositCents: number
   /** Total the kids would be paid if every achievement were approved. */
   payoutCents: number
   /** Total that would leave the stashes if every request were handed over. */

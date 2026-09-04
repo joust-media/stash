@@ -93,7 +93,8 @@ moneyRoutes.post('/withdrawals', async (c) => {
     // Money already promised to another open request cannot be spent twice.
     const [rows] = await conn.query(
       `SELECT COALESCE(SUM(amount_cents), 0) AS n
-         FROM withdrawal_requests WHERE kid_id = ? AND status = 'pending' FOR UPDATE`,
+         FROM withdrawal_requests
+        WHERE kid_id = ? AND status = 'pending' AND kind = 'withdraw' FOR UPDATE`,
       [kid.id],
     )
     const held = Number((rows as { n: number }[])[0]?.n ?? 0)
@@ -121,13 +122,38 @@ moneyRoutes.post('/withdrawals', async (c) => {
   return c.json({ id })
 })
 
+/**
+ * POST /api/money/deposit-requests — the kid handed a parent real cash and is
+ * asking for it to be added. No balance check: there is nothing to check, the
+ * money exists in a parent's hand. The parent confirming is what records it.
+ */
+moneyRoutes.post('/deposit-requests', async (c) => {
+  const { kidId, amountCents, note, imageMediaId } = await c.req.json<{
+    kidId: number
+    amountCents: number
+    note?: string
+    imageMediaId?: number | null
+  }>()
+  const kid = await requireKid(Number(kidId))
+  const amount = Math.round(Number(amountCents))
+  if (!Number.isFinite(amount) || amount <= 0) throw new HttpError(400, 'Enter an amount above $0')
+  if (amount > 100_000) throw new HttpError(400, `Keep it under ${formatMoney(100_000)} at a time`)
+
+  const { insertId } = await run(
+    `INSERT INTO withdrawal_requests (kid_id, amount_cents, category, note, status, requested_at, kind, image_media_id)
+     VALUES (?, ?, 'Cash handed over', ?, 'pending', ?, 'deposit', ?)`,
+    [kid.id, amount, note?.trim() || null, new Date(), imageMediaId ? Number(imageMediaId) : null],
+  )
+  return c.json({ id: insertId })
+})
+
 /** GET /api/money/withdrawals?kidId= — a kid's own open requests. */
 moneyRoutes.get('/withdrawals', async (c) => {
   const kidId = Number(c.req.query('kidId'))
   await requireKid(kidId)
   const rows = await one<{ n: number }>(
     `SELECT COALESCE(SUM(amount_cents), 0) AS n
-       FROM withdrawal_requests WHERE kid_id = ? AND status = 'pending'`,
+       FROM withdrawal_requests WHERE kid_id = ? AND status = 'pending' AND kind = 'withdraw'`,
     [kidId],
   )
   return c.json({ heldCents: Number(rows?.n ?? 0) })

@@ -146,28 +146,47 @@ export function OutstandingRequests({ requests, onGreen }: { requests: KidReques
         </span>
       </div>
 
-      {requests.map((r) => (
-        <div
-          key={`${r.kind}-${r.id}`}
-          className="bg-surface rounded-card flex items-center gap-3 px-4 py-3.5 shadow-[var(--shadow-card)]"
-        >
-          <ChoreIconBadge icon={r.kind === 'withdrawal' ? 'cart' : r.icon} tone="muted" size={38} />
-          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="display text-chestnut truncate text-[16px] leading-tight font-bold">
-              {r.title}
-            </span>
-            <span className="text-mustache/60 truncate text-[12px] leading-tight">
-              {r.kind === 'withdrawal' ? 'Cash out' : 'Achievement'} · {r.timeLabel}
-            </span>
+      {[...requests]
+        // Real cash already handed over outranks everything else here.
+        .sort((a, b) => Number(b.kind === 'deposit') - Number(a.kind === 'deposit'))
+        .map((r) => (
+          <div
+            key={`${r.kind}-${r.id}`}
+            className={cx(
+              'bg-surface rounded-card flex items-center gap-3 px-4 py-3.5 shadow-[var(--shadow-card)]',
+              r.kind === 'deposit' && 'border-leaf border-2',
+            )}
+          >
+            <ChoreIconBadge
+              icon={r.kind === 'withdrawal' ? 'cart' : r.kind === 'deposit' ? 'stash' : r.icon}
+              tone={r.kind === 'deposit' ? 'leaf' : 'muted'}
+              size={38}
+            />
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="display text-chestnut truncate text-[16px] leading-tight font-bold">
+                {r.title}
+              </span>
+              <span
+                className={cx(
+                  'truncate text-[12px] leading-tight',
+                  r.kind === 'deposit' ? 'text-leaf-deep font-bold' : 'text-mustache/60',
+                )}
+              >
+                {r.kind === 'withdrawal'
+                  ? `Cash out · ${r.timeLabel}`
+                  : r.kind === 'deposit'
+                    ? `Your cash, handed over · ${r.timeLabel}`
+                    : `Achievement · ${r.timeLabel}`}
+              </span>
+            </div>
+            <Money
+              cents={r.amountCents}
+              size={21}
+              tone={r.amountCents < 0 ? 'spend' : 'leaf'}
+              sign={r.amountCents < 0 ? MINUS : '+'}
+            />
           </div>
-          <Money
-            cents={r.amountCents}
-            size={21}
-            tone={r.amountCents < 0 ? 'spend' : 'leaf'}
-            sign={r.amountCents < 0 ? MINUS : '+'}
-          />
-        </div>
-      ))}
+        ))}
     </section>
   )
 }

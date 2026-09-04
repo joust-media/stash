@@ -126,6 +126,9 @@ export function toPerson(row: UserRow & { avatar_media_id?: number | null }): Pe
 }
 
 export async function getUser(id: number, db: Db = pool): Promise<UserRow | undefined> {
+  // Number(garbage) is NaN, and the driver would inline that into SQL as the
+  // literal `WHERE id = NaN`. No id, no user — for every caller at once.
+  if (!Number.isFinite(id)) return undefined
   return first<UserRow>(db, 'SELECT * FROM users WHERE id = ?', [id])
 }
 

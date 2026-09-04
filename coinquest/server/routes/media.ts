@@ -146,9 +146,9 @@ mediaRoutes.post('/', async (c) => {
     throw new HttpError(400, 'Attach a photo')
   })
   const file = body.file
+  if (!(file instanceof File)) throw new HttpError(400, 'Attach a photo')
   const actor = await getUser(Number(body.actorId))
   if (!actor) throw new HttpError(403, 'Who is uploading this?')
-  if (!(file instanceof File)) throw new HttpError(400, 'Attach a photo')
   if (file.size > MAX_UPLOAD_BYTES) throw new HttpError(400, 'That photo is too big — 15MB is the limit')
 
   const stored = await ingestImage(Buffer.from(await file.arrayBuffer()), actor.id)

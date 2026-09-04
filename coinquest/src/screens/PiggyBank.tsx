@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
-import type { KidHome, TaskRow } from '../../shared/types'
+import type { TaskRow } from '../../shared/types'
 import { api } from '../lib/api'
 import { MINUS, money } from '../lib/format'
+import { ForestBackdrop } from '../components/ForestBackdrop'
 import { Hero } from '../components/Hero'
 import { Keypad, pushDigit } from '../components/Keypad'
 import { LandedMoment } from '../components/LandedMoment'
-import { HERO_POSE } from '../components/Mascot'
+import { HERO_POSE, Mascot } from '../components/Mascot'
 import { Money } from '../components/Money'
 import { PhotoInput, type UploadedPhoto } from '../components/PhotoInput'
 import { ReminderCard } from '../components/Reminder'
@@ -17,10 +18,12 @@ import {
   ChoiceChip,
   Eyebrow,
   KID_TABS,
+  ProgressBar,
   Screen,
   ScreenMessage,
   SmallButton,
   Spinner,
+  StatusBar,
   TabBar,
   WarningBanner,
 } from '../components/ui'
@@ -33,6 +36,10 @@ type Mode = 'idle' | 'add' | 'earn' | 'spend'
  * My Stash. Money in and money out both start here, and both need a parent:
  * "Add funds" picks something to do and requests it, "Take out" asks for cash.
  * Neither moves a cent on its own.
+ *
+ * The landing page wears the Home header — the same towering band, scrolling
+ * with the page, with the balance, the savings rung, and both doors inside it.
+ * The flows underneath (add / earn / spend) keep the compact band.
  */
 export function PiggyBank() {
   const kidId = Number(useParams().kidId)
@@ -47,69 +54,139 @@ export function PiggyBank() {
   // Money already earned but not yet approved — on its way in, not here yet.
   const pendingInCents = data?.requests.reduce((s, r) => s + Math.max(0, r.amountCents), 0) ?? 0
 
-  return (
-    <Screen
-      tone="green"
-      tint={data?.kid.avatarColor}
-      hero={
-        <Hero
-          seamless
-          eyebrow="Stash"
-          title="Stash"
-          amountCents={data?.balanceCents ?? 0}
-          subtitle={
-            data && data.heldCents > 0
-              ? `${money(availableCents)} ready · ${money(data.heldCents)} waiting on a parent`
-              : `${money(availableCents)} ready to spend`
-          }
-          pose={HERO_POSE.piggyBank}
-          milestone={data?.savings}
-        >
-          {pendingInCents > 0 && (
-            <span className="rounded-full bg-white/15 px-3 py-1 text-[12px] font-bold text-white">
-              Pending · +{money(pendingInCents)} once {data?.approverName} approves
-            </span>
-          )}
-        </Hero>
-      }
-    >
-      {home.isPending && <Spinner onGreen />}
-      {home.isError && <ScreenMessage onGreen>{(home.error as Error).message}</ScreenMessage>}
+  if (mode !== 'idle') {
+    return (
+      <Screen
+        tone="green"
+        tint={data?.kid.avatarColor}
+        hero={
+          <Hero
+            seamless
+            eyebrow="My Stash"
+            title="Stash"
+            amountCents={data?.balanceCents ?? 0}
+            subtitle={
+              data && data.heldCents > 0
+                ? `${money(availableCents)} ready · ${money(data.heldCents)} waiting on a parent`
+                : `${money(availableCents)} ready to spend`
+            }
+            pose={HERO_POSE.piggyBank}
+            milestone={data?.savings}
+          />
+        }
+      >
+        {data && mode === 'add' && (
+          <AddChooser
+            onEarn={() => setMode('earn')}
+            onDeposit={() => navigate(`/kid/${kidId}/stash-it`)}
+            onCancel={() => setMode('idle')}
+          />
+        )}
+        {data && mode === 'earn' && (
+          <EarnView
+            kidId={kidId}
+            tasks={data.tasks.filter((t) => t.status === null)}
+            onCancel={() => setMode('idle')}
+          />
+        )}
+        {data && mode === 'spend' && (
+          <SpendView
+            kidId={kidId}
+            availableCents={availableCents}
+            balanceCents={data.balanceCents}
+            goal={data.goal}
+            onDone={() => {
+              setMode('idle')
+              queryClient.invalidateQueries({ queryKey: ['kidHome', kidId] })
+            }}
+            onCancel={() => setMode('idle')}
+          />
+        )}
 
-      {data && mode === 'idle' && (
-        <IdleView
-          home={data}
-          availableCents={availableCents}
-          onMode={setMode}
-          onHistory={() => navigate(`/kid/${kidId}/history`)}
-        />
-      )}
-      {data && mode === 'add' && (
-        <AddChooser
-          onEarn={() => setMode('earn')}
-          onDeposit={() => navigate(`/kid/${kidId}/stash-it`)}
-          onCancel={() => setMode('idle')}
-        />
-      )}
-      {data && mode === 'earn' && (
-        <EarnView
-          kidId={kidId}
-          tasks={data.tasks.filter((t) => t.status === null)}
-          onCancel={() => setMode('idle')}
-        />
-      )}
-      {data && mode === 'spend' && (
-        <SpendView
-          kidId={kidId}
-          availableCents={availableCents}
-          balanceCents={data.balanceCents}
-          goal={data.goal}
-          onDone={() => {
-            setMode('idle')
-            queryClient.invalidateQueries({ queryKey: ['kidHome', kidId] })
-          }}
-          onCancel={() => setMode('idle')}
-        />
+        <TabBar tabs={KID_TABS(kidId)} />
+        {data && <LandedMoment home={data} />}
+      </Screen>
+    )
+  }
+
+  return (
+    <Screen tint={data?.kid.avatarColor} hero={<></>}>
+      {home.isPending && <Spinner />}
+      {home.isError && <ScreenMessage>{(home.error as Error).message}</ScreenMessage>}
+
+      {data && (
+        <div className="scroll-y animate-fade flex flex-1 flex-col pb-4 [&>*]:shrink-0">
+          {/* The Home-sized header. Nothing here is sticky — it scrolls. */}
+          <ForestBackdrop className="relative flex h-[76%] shrink-0 flex-col rounded-b-[32px] shadow-[var(--shadow-card)]">
+            <StatusBar onGreen />
+            <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 pb-4 text-center">
+              <Mascot pose={HERO_POSE.piggyBank} height={190} />
+              <span className="text-[12px] font-bold tracking-[0.16em] text-white/80 uppercase">
+                My stash
+              </span>
+              <Money cents={data.balanceCents} size={76} tone="onGreen" className="-mt-1" />
+              <span className="text-[13px] text-white/85">
+                {data.heldCents > 0
+                  ? `${money(availableCents)} ready · ${money(data.heldCents)} waiting on a parent`
+                  : `${money(availableCents)} ready to spend`}
+              </span>
+              {pendingInCents > 0 && (
+                <span className="rounded-full bg-white/15 px-3 py-1 text-[12px] font-bold text-white">
+                  Pending · +{money(pendingInCents)} once {data.approverName} approves
+                </span>
+              )}
+
+              {/* The amount to go: the savings rung, riding inside the header. */}
+              <div className="flex w-full flex-col gap-1 pt-2">
+                <div className="flex items-baseline justify-between gap-2 text-[12px] text-white">
+                  <span className="truncate font-bold">{data.savings.label}</span>
+                  <span className="shrink-0 text-white/85">{data.savings.detail}</span>
+                </div>
+                <ProgressBar pct={data.savings.pct} onGreen />
+              </div>
+
+              {/* The two doors, right under the number — same as Home's. */}
+              <div className="grid w-full grid-cols-2 gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setMode('add')}
+                  className="pressable display text-leaf-deep flex min-h-14 items-center justify-center rounded-full bg-white text-[18px] font-bold shadow-[var(--shadow-button)]"
+                >
+                  Add funds
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode('spend')}
+                  disabled={availableCents <= 0}
+                  className="pressable display flex min-h-14 items-center justify-center rounded-full border-2 border-white/40 bg-white/10 text-[18px] font-bold text-white disabled:opacity-45"
+                >
+                  Take out
+                </button>
+              </div>
+            </div>
+          </ForestBackdrop>
+
+          <div className="flex flex-col gap-5 px-6 pt-4 [&>*]:shrink-0">
+            {data.savings.nudge && (
+              <div className="bg-gold rounded-card text-mustache px-4 py-3 text-center text-[15px] font-bold">
+                {data.savings.nudge}
+              </div>
+            )}
+
+            <OutstandingRequests requests={data.requests} />
+            {data.requests.length > 0 && (
+              <ReminderCard
+                kidId={data.kid.id}
+                approverName={data.approverName}
+                remaining={data.remindersLeftToday}
+              />
+            )}
+
+            <SmallButton variant="quiet" onClick={() => navigate(`/kid/${kidId}/history`)}>
+              See every dollar
+            </SmallButton>
+          </div>
+        </div>
       )}
 
       <TabBar tabs={KID_TABS(kidId)} />
@@ -117,82 +194,6 @@ export function PiggyBank() {
       {/* A parent confirmed a hand-over since the kid last looked. */}
       {data && <LandedMoment home={data} />}
     </Screen>
-  )
-}
-
-/* ---------------------------------------------------------------- idle --- */
-
-function IdleView({
-  home,
-  availableCents,
-  onMode,
-  onHistory,
-}: {
-  home: KidHome
-  availableCents: number
-  onMode: (m: Mode) => void
-  onHistory: () => void
-}) {
-  const open = home.tasks.filter((t) => t.status === null)
-
-  return (
-    <div className="scroll-y animate-fade -mx-1 flex flex-1 flex-col gap-5 px-6 pt-5 pb-4 [&>*]:shrink-0">
-      {home.savings.nudge && (
-        <div className="bg-gold rounded-card text-mustache px-4 py-3 text-center text-[15px] font-bold">
-          {home.savings.nudge}
-        </div>
-      )}
-
-      {/*
-        The page is one colour top to bottom, so these two sit inside the
-        header rather than under it — the amount above, the ways it moves right
-        below. Equal size on purpose: taking money out is the point of saving.
-      */}
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={() => onMode('add')}
-          className="pressable bg-surface rounded-card flex min-h-[132px] flex-col items-start gap-2 p-4 text-left shadow-[var(--shadow-button)]"
-        >
-          <span className="bg-leaf display flex h-11 w-11 items-center justify-center rounded-full text-[24px] font-extrabold text-white">
-            ＋
-          </span>
-          <span className="display text-chestnut text-[20px] leading-tight font-extrabold">Add funds</span>
-          <span className="text-mustache/65 text-[12px] leading-tight">
-            {open.length > 0 ? `${open.length} to do · ${money(home.remainingCents)}` : 'Nothing to do yet'}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onMode('spend')}
-          disabled={availableCents <= 0}
-          className="pressable rounded-card flex min-h-[132px] flex-col items-start gap-2 border-2 border-white/30 bg-white/10 p-4 text-left disabled:opacity-45"
-        >
-          <span className="display flex h-11 w-11 items-center justify-center rounded-full bg-white/20 text-[24px] font-extrabold text-white">
-            ↑
-          </span>
-          <span className="display text-[20px] leading-tight font-extrabold text-white">Take out</span>
-          <span className="text-[12px] leading-tight text-white/80">
-            {availableCents > 0 ? `${money(availableCents)} ready` : 'Nothing to spend yet'}
-          </span>
-        </button>
-      </div>
-
-      <OutstandingRequests requests={home.requests} onGreen />
-      {home.requests.length > 0 && (
-        <ReminderCard
-          kidId={home.kid.id}
-          approverName={home.approverName}
-          remaining={home.remindersLeftToday}
-          onGreen
-        />
-      )}
-
-      <SmallButton variant="quiet" className="border-white/30 text-white" onClick={() => onHistory()}>
-        See every dollar
-      </SmallButton>
-    </div>
   )
 }
 

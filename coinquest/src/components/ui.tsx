@@ -455,7 +455,7 @@ export const KID_TABS = (kidId: number): Tab[] => [
   { to: `/kid/${kidId}`, label: 'Home' },
   { to: `/kid/${kidId}/tasks`, label: 'Earn' },
   { to: `/kid/${kidId}/goals`, label: 'Goals' },
-  { to: `/kid/${kidId}/bank`, label: 'Stash' },
+  { to: `/kid/${kidId}/bank`, label: 'My Stash' },
 ]
 
 export const PARENT_TABS: Tab[] = [

@@ -123,29 +123,19 @@ export function KidHome() {
               </span>
             )}
 
-            {/* The two doors, right under the number. */}
-            <div className="grid w-full grid-cols-2 gap-3 pt-3">
-              <button
-                type="button"
-                onClick={() => navigate(`/kid/${kidId}/tasks`)}
-                className="pressable display text-leaf-deep flex min-h-14 items-center justify-center rounded-full bg-white text-[18px] font-bold shadow-[var(--shadow-button)]"
-              >
-                Earn
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate(`/kid/${kidId}/bank`)}
-                className="pressable display flex min-h-14 items-center justify-center rounded-full border-2 border-white/40 bg-white/10 text-[18px] font-bold text-white"
-              >
-                Stash
-              </button>
-            </div>
-
-            {/* The side door straight into the burrow: cash in hand, one tap. */}
+            {/* The two doors, right under the number, both full width — the
+                stash itself lives on the My Stash tab now. */}
+            <button
+              type="button"
+              onClick={() => navigate(`/kid/${kidId}/tasks`)}
+              className="pressable display text-leaf-deep mt-3 flex min-h-14 w-full items-center justify-center rounded-full bg-white text-[18px] font-bold shadow-[var(--shadow-button)]"
+            >
+              Earn
+            </button>
             <button
               type="button"
               onClick={() => navigate(`/kid/${kidId}/stash-it`)}
-              className="pressable display flex min-h-11 w-full items-center justify-center rounded-full border-2 border-white/25 bg-white/10 text-[15px] font-bold text-white"
+              className="pressable display flex min-h-14 w-full items-center justify-center rounded-full border-2 border-white/40 bg-white/10 text-[18px] font-bold text-white"
             >
               Got cash? Stash it
             </button>
@@ -275,24 +265,23 @@ function EarningsBlock({
 
   return (
     <section className="bg-surface rounded-card flex flex-col gap-3 p-4 shadow-[var(--shadow-card)]">
-      <div className="flex items-center justify-between">
-        <Eyebrow>{label}</Eyebrow>
-        <div className="bg-cream flex rounded-full p-0.5">
-          {(['seven', 'thirty'] as const).map((w) => (
-            <button
-              key={w}
-              type="button"
-              aria-pressed={window === w}
-              onClick={() => onWindow(w)}
-              className={cx(
-                'rounded-full px-3 py-1 text-[11px] font-bold tracking-[0.08em] uppercase transition-colors',
-                window === w ? 'bg-leaf text-white' : 'text-mustache/60',
-              )}
-            >
-              {w === 'seven' ? '7 days' : '30 days'}
-            </button>
-          ))}
-        </div>
+      {/* Title on its own line, centred; the window toggle splits 50/50 below. */}
+      <Eyebrow className="w-full text-center">{label}</Eyebrow>
+      <div className="bg-cream grid grid-cols-2 gap-1 rounded-full p-1">
+        {(['seven', 'thirty'] as const).map((w) => (
+          <button
+            key={w}
+            type="button"
+            aria-pressed={window === w}
+            onClick={() => onWindow(w)}
+            className={cx(
+              'rounded-full py-1.5 text-center text-[11px] font-bold tracking-[0.08em] uppercase transition-colors',
+              window === w ? 'bg-leaf text-white' : 'text-mustache/60 hover:text-mustache',
+            )}
+          >
+            {w === 'seven' ? '7 days' : '30 days'}
+          </button>
+        ))}
       </div>
 
       {loading && <Spinner />}

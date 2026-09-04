@@ -31,6 +31,7 @@ export function KidHome() {
   const kidId = Number(useParams().kidId)
   const navigate = useNavigate()
   const [window_, setWindow] = useState<'seven' | 'thirty'>('thirty')
+  const [askIndex, setAskIndex] = useState<number | null>(null)
 
   const { data, isPending, isError, error } = useQuery({
     queryKey: ['kidHome', kidId],
@@ -57,6 +58,40 @@ export function KidHome() {
           {/* The header scrolls with everything else — nothing here is sticky. */}
         <ForestBackdrop className="relative flex h-[76%] shrink-0 flex-col rounded-b-[32px] shadow-[var(--shadow-card)]">
           <StatusBar onGreen />
+          {data && (
+            <button
+              type="button"
+              onClick={() => setAskIndex((i) => (i === null ? 0 : i + 1))}
+              className="pressable display absolute top-32 left-4 z-10 rounded-full bg-white/90 px-3.5 py-2 text-[13px] font-bold text-leaf-deep shadow-[var(--shadow-card)]"
+            >
+              Ask Stash
+            </button>
+          )}
+
+          {data && askIndex !== null && (
+            <div className="absolute top-44 right-6 left-4 z-20">
+              {/* His answer: a speech bubble with a tail pointing back at him. */}
+              <div className="animate-fade-up relative rounded-2xl bg-white p-4 shadow-[var(--shadow-card)]">
+                <span className="absolute -top-2 left-10 h-4 w-4 rotate-45 bg-white" />
+                <p className="text-chestnut text-[15px] leading-snug font-bold">
+                  {askStash(data, askIndex)}
+                </p>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-mustache/55 text-[11px] font-bold tracking-[0.1em] uppercase">
+                    — Stash
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setAskIndex(null)}
+                    className="text-mustache/60 text-[12px] font-bold underline underline-offset-2"
+                  >
+                    Thanks!
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {data && (
             <button
               type="button"
@@ -289,4 +324,40 @@ function EarningsBlock({
 function greeting(doneToday: number, name?: string): string {
   if (!name) return 'Hi'
   return doneToday > 0 ? `Nice work, ${name}!` : `Hi, ${name}`
+}
+
+/**
+ * What Stash says when asked. Not a chatbot — a pocketful of lines in his
+ * voice, led by whatever is actually true right now, cycling on each tap.
+ * Talk up, never down; no scolding anywhere.
+ */
+function askStash(data: import('../../shared/types').KidHome, index: number): string {
+  const lines: string[] = []
+
+  const pendingIn = data.requests.filter((r) => r.amountCents > 0)
+  if (pendingIn.length > 0) {
+    lines.push(
+      `${data.approverName} still has ${pendingIn.length === 1 ? 'one of yours' : `${pendingIn.length} of yours`} to look at. If it drags, the nudge button on your Stash page sends me over.`,
+    )
+  }
+  if (data.goal && data.goal.progressPct >= 80 && data.goal.progressPct < 100) {
+    lines.push(`You're ${money(data.goal.remainingCents)} from ${data.goal.title}. I can practically smell it.`)
+  }
+  const open = data.tasks.filter((t) => t.status === null)
+  if (open.length > 0) {
+    const best = [...open].sort((a, b) => b.rewardCents - a.rewardCents)[0]
+    lines.push(`${best.title} pays ${money(best.rewardCents)} and nobody's grabbed it yet.`)
+  }
+  if (data.dailyGoal.done >= data.dailyGoal.target) {
+    lines.push(`That's your ${data.dailyGoal.target} today. Anything else is just showing off — I'm for it.`)
+  }
+  if (data.goal === null && data.suggestions.some((s) => s.adoptedGoalId === null)) {
+    lines.push(`No goal? ${data.approverName} put things up they'd go halves on. Half price for you, full thing on your shelf.`)
+  }
+
+  lines.push('Every dollar in here traces back to something you did. That is the whole trick.')
+  lines.push('Little and often beats big and someday. Ask any squirrel about winter.')
+  lines.push("A goal gives your stash somewhere to go. Pick something you actually want — not something that just looks shiny.")
+
+  return lines[index % lines.length]
 }

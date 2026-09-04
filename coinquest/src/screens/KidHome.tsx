@@ -71,8 +71,8 @@ export function KidHome() {
             </button>
           )}
           <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 pb-4 text-center">
-            <Mascot pose={data?.kid.mascotPose ?? HERO_POSE.kidHome} height={190} />
-            <span className="display text-[20px] leading-tight font-bold text-white">
+            <Mascot pose={data?.kid.mascotPose ?? HERO_POSE.kidHome} height={228} />
+            <span className="display text-[38px] leading-tight font-extrabold text-white">
               {greeting(data?.dailyGoal.done ?? 0, data?.kid.nickname || data?.kid.name)}
             </span>
             <span className="text-[12px] font-bold tracking-[0.16em] text-white/80 uppercase">
@@ -84,24 +84,24 @@ export function KidHome() {
                 In progress: {doing.map((t) => t.title).join(' · ')}
               </span>
             )}
-          </div>
 
-          {/* The two doors, inside the colour with everything else. */}
-          <div className="grid shrink-0 grid-cols-2 gap-3 px-6 pb-6">
-            <button
-              type="button"
-              onClick={() => navigate(`/kid/${kidId}/tasks`)}
-              className="pressable display text-leaf-deep flex min-h-14 items-center justify-center rounded-full bg-white text-[18px] font-bold shadow-[var(--shadow-button)]"
-            >
-              Earn
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate(`/kid/${kidId}/bank`)}
-              className="pressable display flex min-h-14 items-center justify-center rounded-full border-2 border-white/40 bg-white/10 text-[18px] font-bold text-white"
-            >
-              Stash
-            </button>
+            {/* The two doors, right under the number. */}
+            <div className="grid w-full grid-cols-2 gap-3 pt-3">
+              <button
+                type="button"
+                onClick={() => navigate(`/kid/${kidId}/tasks`)}
+                className="pressable display text-leaf-deep flex min-h-14 items-center justify-center rounded-full bg-white text-[18px] font-bold shadow-[var(--shadow-button)]"
+              >
+                Earn
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate(`/kid/${kidId}/bank`)}
+                className="pressable display flex min-h-14 items-center justify-center rounded-full border-2 border-white/40 bg-white/10 text-[18px] font-bold text-white"
+              >
+                Stash
+              </button>
+            </div>
           </div>
         </ForestBackdrop>
       }

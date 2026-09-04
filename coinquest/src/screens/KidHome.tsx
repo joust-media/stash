@@ -47,12 +47,14 @@ export function KidHome() {
   return (
     <Screen
       tint={data?.kid.avatarColor}
-      hero={
-        /*
-         * Three quarters of the screen belongs to Stash and the number. This
-         * is the one place the balance gets to be enormous, dead centre, with
-         * nothing competing.
-         */
+      hero={<></>}
+    >
+      {isPending && <Spinner />}
+      {isError && <ScreenMessage>{(error as Error).message}</ScreenMessage>}
+
+      {data && (
+        <div className="scroll-y animate-fade flex flex-1 flex-col pb-4 [&>*]:shrink-0">
+          {/* The header scrolls with everything else — nothing here is sticky. */}
         <ForestBackdrop className="relative flex h-[76%] shrink-0 flex-col rounded-b-[32px] shadow-[var(--shadow-card)]">
           <StatusBar onGreen />
           {data && (
@@ -104,13 +106,8 @@ export function KidHome() {
             </div>
           </div>
         </ForestBackdrop>
-      }
-    >
-      {isPending && <Spinner />}
-      {isError && <ScreenMessage>{(error as Error).message}</ScreenMessage>}
 
-      {data && (
-        <div className="scroll-y animate-fade -mx-1 flex flex-1 flex-col gap-5 px-6 pt-4 pb-4 [&>*]:shrink-0">
+          <div className="flex flex-col gap-5 px-6 pt-4 [&>*]:shrink-0">
           {/*
             Only when something is pending — and deliberately not a button.
             Chasing approvals is not this screen's job.
@@ -200,6 +197,7 @@ export function KidHome() {
             </section>
           )}
 
+          </div>
         </div>
       )}
 

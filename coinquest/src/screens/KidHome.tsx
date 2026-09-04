@@ -53,7 +53,7 @@ export function KidHome() {
          * is the one place the balance gets to be enormous, dead centre, with
          * nothing competing.
          */
-        <ForestBackdrop className="relative h-[72%] shrink-0 rounded-b-[32px] shadow-[var(--shadow-card)]">
+        <ForestBackdrop className="relative flex h-[76%] shrink-0 flex-col rounded-b-[32px] shadow-[var(--shadow-card)]">
           <StatusBar onGreen />
           {data && (
             <button
@@ -85,6 +85,24 @@ export function KidHome() {
               </span>
             )}
           </div>
+
+          {/* The two doors, inside the colour with everything else. */}
+          <div className="grid shrink-0 grid-cols-2 gap-3 px-6 pb-6">
+            <button
+              type="button"
+              onClick={() => navigate(`/kid/${kidId}/tasks`)}
+              className="pressable display text-leaf-deep flex min-h-14 items-center justify-center rounded-full bg-white text-[18px] font-bold shadow-[var(--shadow-button)]"
+            >
+              Earn
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(`/kid/${kidId}/bank`)}
+              className="pressable display flex min-h-14 items-center justify-center rounded-full border-2 border-white/40 bg-white/10 text-[18px] font-bold text-white"
+            >
+              Stash
+            </button>
+          </div>
         </ForestBackdrop>
       }
     >
@@ -93,22 +111,6 @@ export function KidHome() {
 
       {data && (
         <div className="scroll-y animate-fade -mx-1 flex flex-1 flex-col gap-5 px-6 pt-4 pb-4 [&>*]:shrink-0">
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => navigate(`/kid/${kidId}/tasks`)}
-              className="pressable display bg-leaf hover:bg-leaf-deep flex min-h-14 items-center justify-center rounded-full text-[18px] font-bold text-white shadow-[var(--shadow-button)]"
-            >
-              Earn
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate(`/kid/${kidId}/bank`)}
-              className="pressable display border-leaf text-leaf-deep bg-surface flex min-h-14 items-center justify-center rounded-full border-2 text-[18px] font-bold shadow-[var(--shadow-card)]"
-            >
-              Stash
-            </button>
-          </div>
           {/*
             Only when something is pending — and deliberately not a button.
             Chasing approvals is not this screen's job.

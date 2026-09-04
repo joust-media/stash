@@ -108,13 +108,15 @@ export function KidHome() {
               />
             </button>
           )}
+          {/* The same rhythm as My Stash: mascot, label, the number, one quiet
+              line, then the doors — everything centred on the same beat. */}
           <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 pb-4 text-center">
-            <Mascot pose={data?.kid.mascotPose ?? HERO_POSE.kidHome} height={228} />
+            <Mascot pose={data?.kid.mascotPose ?? HERO_POSE.kidHome} height={190} />
             <span className="text-[12px] font-bold tracking-[0.16em] text-white/80 uppercase">
               Your stash
             </span>
             <Money cents={data?.balanceCents ?? 0} size={76} tone="onGreen" className="-mt-1" />
-            <span className="display text-[38px] leading-tight font-extrabold text-white">
+            <span className="text-[14px] font-bold text-white/90">
               {greeting(data?.dailyGoal.done ?? 0, data?.kid.nickname || data?.kid.name)}
             </span>
             {doing.length > 0 && (
